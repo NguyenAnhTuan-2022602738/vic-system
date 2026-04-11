@@ -1,0 +1,26 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+pydantic==2.9.0
+pydantic-settings==2.5.0
+
+# ML / AI
+torch>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+
+# Technical indicators
+ta>=0.11.0
+
+# Data source
+vnstock
+scikit-learn
+joblib
+
+# HTTP client (for Ollama)
+requests>=2.31.0
+
+# Testing
+pytest>=7.4.0
+httpx>=0.25.0

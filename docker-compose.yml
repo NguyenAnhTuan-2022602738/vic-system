@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # === Cơ sở dữ liệu ===
+  mongodb:
+    image: mongo:7
+    container_name: vic-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=vic_system
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === Dịch vụ AI (Python/FastAPI) ===
+  ai-service:
+    build: ./ai-service
+    container_name: vic-ai-service
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./ai-service:/app
+      - ./data:/data
+      - ./ai-service/models:/app/models
+    environment:
+      - APP_NAME=VIC AI Service
+      - MODEL_PATH=models/active_model.pt
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=qwen2.5:7b
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # === Web Backend (NodeJS/Express) ===
+  web-backend:
+    build: ./web-backend
+    container_name: vic-web-backend
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./web-backend:/app
+      - /app/node_modules
+    environment:
+      - PORT=3333
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongodb:27017/vic_system
+      - AI_SERVICE_URL=http://ai-service:8888
+      - CORS_ORIGINS=http://localhost:51731
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # === Frontend (React/Vite) ===
+  frontend:
+    build: ./frontend
+    container_name: vic-frontend
+    ports:
+      - "51731:51731"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3333
+    depends_on:
+      - web-backend
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+    driver: local

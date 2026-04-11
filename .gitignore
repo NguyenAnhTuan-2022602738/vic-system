@@ -1,0 +1,64 @@
+# Dependencies & build
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.next/
+
+# Python virtual environments (CRITICAL)
+venv/
+.venv/
+env/
+/ai-service/venv/
+/ai-service/.venv/
+
+# v0 runtime files (Frontend)
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Environment & Secret files
+.env
+.env.local
+.env.production
+.env.development.local
+
+# Model weights
+*.pt
+*.pth
+*.onnx
+*.bin
+ai-service/models/active_model.*
+ai-service/models/archive/
+
+# Data files
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.h5
+*.html
+tmp/
+tmp_news.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+

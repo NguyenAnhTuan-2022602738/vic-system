@@ -1,0 +1,8 @@
+{
+  "name": "vic-system-root",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "web-backend"
+  ]
+}

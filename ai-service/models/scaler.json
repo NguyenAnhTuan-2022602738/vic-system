@@ -1,0 +1,35 @@
+{
+  "feature_cols": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume_norm",
+    "rsi",
+    "macd",
+    "ma20",
+    "volatility"
+  ],
+  "min_vals": {
+    "open": 9700.0,
+    "high": 9920.0,
+    "low": 9450.0,
+    "close": 9660.0,
+    "volume_norm": 0.0,
+    "rsi": 0.0,
+    "macd": -7313.8791514107725,
+    "ma20": 9687.5,
+    "volatility": 0.0010735576464643447
+  },
+  "max_vals": {
+    "open": 183500.0,
+    "high": 190000.0,
+    "low": 176600.0,
+    "close": 179000.0,
+    "volume_norm": 7.384412348714329,
+    "rsi": 100.0,
+    "macd": 12537.646976030752,
+    "ma20": 165550.0,
+    "volatility": 0.051839416581713114
+  }
+}
