@@ -25,8 +25,26 @@ export function AccuracyCard({ data, isLoading }: AccuracyCardProps) {
 
   if (!data) return null;
 
-  const { forecast, actual, accuracy } = data;
-  const score = parseInt(accuracy.score);
+  const { forecast, actual, accuracy, message } = data;
+  
+  // Kiểm tra an toàn: Nếu không có accuracy hoặc score, hiển thị trạng thái chờ hoặc thông báo
+  const score = accuracy && accuracy.score ? parseInt(accuracy.score) : null;
+
+  if (score === null || isNaN(score)) {
+    return (
+      <Card className="p-8 bg-slate-900/40 backdrop-blur-xl border-amber-500/20 border-dashed flex flex-col items-center justify-center text-center gap-4 min-h-[300px]">
+        <div className="p-3 bg-amber-500/10 rounded-full">
+          <Clock className="w-8 h-8 text-amber-500 animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-slate-200">Dữ liệu đối chiếu chưa sẵn sàng</h3>
+          <p className="text-sm text-slate-400 max-w-sm">
+            {message || "Hiện tại chưa có đủ dữ liệu giá thực tế T+2 để thực hiện đối chiếu độ chính xác cho ngày này."}
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="transition-all duration-300">
@@ -62,8 +80,14 @@ export function AccuracyCard({ data, isLoading }: AccuracyCardProps) {
                 <div className="flex flex-col gap-1 mt-2">
                   <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
                     <Banknote className="w-3 h-3 text-slate-600" />
-                    Entry Price (T): <span className="text-slate-300">{(forecast.last_price_used || 0).toLocaleString()}đ</span>
+                    Giá dự báo (T): <span className="text-slate-300">{(forecast.last_price_used || 0).toLocaleString()}đ</span>
                   </p>
+                  {actual && (
+                    <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                      <Zap className="w-3 h-3 text-emerald-500" />
+                      Giá CSV ngày chọn: <span className="text-emerald-400 font-bold">{(actual.base_close_price || 0).toLocaleString()}đ</span>
+                    </p>
+                  )}
                   <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
                     <AlertTriangle className="w-3 h-3 text-warning" />
                     Uncertainty (σ): <span className="text-warning font-bold">{forecast.uncertainty_str || "±2.40%"}</span>
@@ -81,7 +105,7 @@ export function AccuracyCard({ data, isLoading }: AccuracyCardProps) {
           <div className={`p-5 rounded-2xl border transition-all duration-500 ${accuracy.direction_hit ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}>
             <div className="flex items-center gap-2 mb-3 text-slate-400 text-sm">
               <Clock className="w-4 h-4" />
-              Actual Result (T+3)
+              Actual Result (T+2)
             </div>
             {actual ? (
               <div className="flex items-end justify-between">
@@ -92,7 +116,7 @@ export function AccuracyCard({ data, isLoading }: AccuracyCardProps) {
                   <div className="flex flex-col gap-1 mt-2">
                     <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-slate-600" />
-                      Exit Price (T+3): <span className="text-slate-300">{(actual.exit_price || 0).toLocaleString()}đ</span>
+                      Exit Price (T+2): <span className="text-slate-300">{(actual.exit_price || 0).toLocaleString()}đ</span>
                     </p>
                     <p className="text-[11px] text-slate-500 font-medium">
                       Settled: <span className="text-slate-400">{new Date(actual.exit_date).toLocaleDateString('vi-VN')}</span>

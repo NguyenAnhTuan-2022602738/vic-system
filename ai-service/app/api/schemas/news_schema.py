@@ -31,24 +31,18 @@ class AdjustedForecastRequest(BaseModel):
     target_return: Optional[float] = Field(default=0.05)
 
 
-class AdjustedForecastData(BaseModel):
-    """Dữ liệu dự báo đã điều chỉnh."""
-    # Dự báo gốc
+from app.api.schemas.forecast_schema import ForecastData
+
+class AdjustedForecastData(ForecastData):
+    """Dữ liệu dự báo đã điều chỉnh (Kế thừa đầy đủ từ ForecastData)."""
+    # Các trường bổ sung cho so sánh Sandbox
     original_mu: float
     original_sigma: float
-    # Dự báo đã điều chỉnh
     adjusted_mu: float
     adjusted_sigma: float
-    # Phân tích tin tức
-    sentiment_score: float
-    impact_weight: float
-    # Chỉ số rủi ro (đã điều chỉnh)
-    probability_gain: float
-    var_95: float
-    recommendation: str
 
 
 class AdjustedForecastResponse(BaseModel):
     """Response dự báo đã điều chỉnh."""
     success: bool = True
-    data: AdjustedForecastData
+    data: Optional[AdjustedForecastData] = None

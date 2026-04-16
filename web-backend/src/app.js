@@ -19,6 +19,7 @@ import newsRoutes from './modules/news/news.routes.js';
 import tradeRoutes from './modules/trade/trade.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import marketRoutes from './modules/market/market.routes.js';
+import assistantRoutes from './modules/assistant/assistant.routes.js';
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/trades', tradeRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/market', marketRoutes);
+app.use('/api/v1/assistant', assistantRoutes);
 
 // Middleware xử lý lỗi (phải đặt cuối cùng)
 app.use(errorHandler);

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { TradeSignalsTable } from "@/components/trade-signals-table"
 import { PerformanceChart } from "@/components/charts/performance-chart"
@@ -10,15 +10,15 @@ import { TradeDistribution } from "@/components/charts/trade-distribution"
 import { MetricCard } from "@/components/metric-card"
 import { getTradeStats, TradeStats } from "@/lib/api"
 import { useI18n } from "@/lib/i18n"
-import { Loader2 } from "lucide-react"
 
 export default function TradePage() {
   const { t } = useI18n()
   const [stats, setStats] = useState<TradeStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
+      setLoading(true)
       const data = await getTradeStats()
       setStats(data)
     } catch (error) {
@@ -26,11 +26,16 @@ export default function TradePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [fetchStats])
+
+  // Callback khi dữ liệu giao dịch thay đổi (thêm/sửa/xoá lệnh)
+  const handleTradeDataChanged = useCallback(() => {
+    fetchStats()
+  }, [fetchStats])
 
   const displayData = stats?.equityCurve.map(p => ({
     date: p.date,
@@ -99,9 +104,10 @@ export default function TradePage() {
 
         <RiskMetricsPanel />
         <TradeDistribution data={stats?.distribution} />
-        <TradeSignalsTable />
+        
+        {/* Trading Journal - giờ đã có form nhập lệnh */}
+        <TradeSignalsTable onDataChanged={handleTradeDataChanged} />
       </main>
     </div>
   )
 }
-

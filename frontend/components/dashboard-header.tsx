@@ -24,7 +24,7 @@ export function DashboardHeader({
   const todayStr = new Date().toISOString().split('T')[0]
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+    <header suppressHydrationWarning className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div>
         <h1 className="text-lg font-semibold text-foreground tracking-tight">{title}</h1>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}

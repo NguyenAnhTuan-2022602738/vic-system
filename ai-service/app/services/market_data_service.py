@@ -15,14 +15,28 @@ class MarketDataService:
 
     CSV_PATH = r"c:\Users\cuida\Documents\DATN\vic-system\ai-service\data\raw\vic_price.csv"
 
+    def __init__(self):
+        self._df_cache = None
+        self._last_load_time = 0
+        self._cache_expiry = 60  # 1 phút cache DataFrame
+
     def get_vic_history(self, start_date: str = "2024-01-01", end_date: str = None) -> pd.DataFrame:
         """Lấy dữ liệu lịch sử VIC đảm bảo đã được update tới T-1 hoặc mốc end_date."""
-        self.update_csv_if_needed()
-        if not os.path.exists(self.CSV_PATH):
-            return pd.DataFrame()
-        df = pd.read_csv(self.CSV_PATH)
-        df['date'] = pd.to_datetime(df['date'])
+        import time
+        now = time.time()
         
+        # Nếu đang chạy Backtest/Flashback, việc đọc cache này sẽ giảm 90% thời gian IO
+        if self._df_cache is not None and (now - self._last_load_time < self._cache_expiry):
+            df = self._df_cache.copy()
+        else:
+            self.update_csv_if_needed()
+            if not os.path.exists(self.CSV_PATH):
+                return pd.DataFrame()
+            df = pd.read_csv(self.CSV_PATH)
+            df['date'] = pd.to_datetime(df['date'])
+            self._df_cache = df.copy()
+            self._last_load_time = now
+
         # Lọc theo start_date
         df = df[df['date'] >= start_date]
         

@@ -103,15 +103,13 @@ async def get_sandbox_adjusted_forecast(
         
         # 4. Đóng gói dữ liệu khớp 100% với AdjustedForecastData schema
         data = {
+            **adjusted, # Chứa horizon, expected_return, uncertainty, comparison, etc.
             "original_mu": original["expected_return"],
             "original_sigma": original["uncertainty"],
             "adjusted_mu": adjusted["expected_return"],
             "adjusted_sigma": adjusted["uncertainty"],
             "sentiment_score": manual_score,
             "impact_weight": 0.5, # Mặc định cho kịch bản giả lập
-            "probability_gain": adjusted["probability_gain"],
-            "var_95": adjusted["var_95"],
-            "recommendation": adjusted["recommendation"]
         }
         
         logger.info(f"[Sandbox] Chạy thành công. Adjusted Mu: {data['adjusted_mu']}")

@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AppSidebar } from '@/components/app-sidebar'
 import { ThemeProvider } from '@/components/theme-provider'
 import { I18nProvider } from '@/lib/i18n'
+import { DashboardProvider } from '@/context/dashboard-context'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -36,6 +37,8 @@ export const viewport: Viewport = {
   themeColor: '#0a0e17',
 }
 
+import { Toaster } from '@/components/ui/sonner'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased bg-background text-foreground">
+      <body className="font-sans antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -51,11 +54,14 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <I18nProvider>
-            <div className="flex min-h-screen">
-              <AppSidebar />
-              {children}
-            </div>
+            <DashboardProvider>
+              <div className="flex min-h-screen" suppressHydrationWarning>
+                <AppSidebar />
+                {children}
+              </div>
+            </DashboardProvider>
           </I18nProvider>
+          <Toaster />
         </ThemeProvider>
         <Analytics />
       </body>

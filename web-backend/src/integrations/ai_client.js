@@ -8,7 +8,7 @@ import { env } from '../config/env.js';
 
 const aiClient = axios.create({
   baseURL: env.AI_SERVICE_URL,
-  timeout: 30000,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -36,6 +36,7 @@ export const requestForecast = async ({ horizon, target_return = 0.05, alpha = 0
 export const requestLatestNews = async (limit = 5, forceRefresh = false) => {
   const response = await aiClient.get('/api/v1/news/latest', {
     params: { limit, force_refresh: forceRefresh },
+    timeout: 60000,
   });
   return response.data;
 };
@@ -70,7 +71,7 @@ export const requestAdjustedForecast = async (horizon, newsText) => {
  */
 export const requestBackfill = async ({ 
   base_date, 
-  horizon = 3, 
+  horizon = 2, 
   target_return = 0.05, 
   alpha = 0.05, 
   beta = 0.2,
@@ -83,7 +84,7 @@ export const requestBackfill = async ({
     alpha,
     beta,
     manual_sentiment
-  });
+  }, { timeout: 60000 });
   return response.data;
 };
 
@@ -104,6 +105,7 @@ export const requestNewsBackfill = async (date) => {
 export const requestMarketHistory = async (start_date = '2024-01-01', end_date = null) => {
   const response = await aiClient.get('/api/v1/market/history', {
     params: { start_date, end_date },
+    timeout: 60000,
   });
   return response.data;
 };
@@ -114,17 +116,22 @@ export const requestMarketHistory = async (start_date = '2024-01-01', end_date =
 export const requestMultiHorizonForecast = async (target_return = 0.05) => {
   const response = await aiClient.get('/api/v1/forecast/multi-horizon', {
     params: { target_return },
+    timeout: 60000,
   });
   return response.data;
 };
 
 /**
- * Lấy hiệu suất chiến thuật.
+ * Lấy hiệu suất chiến thuật (Backtest).
  */
-export const requestPerformanceMetrics = async () => {
-  const response = await aiClient.get('/api/v1/forecast/performance');
+export const requestPerformanceMetrics = async (days = 30) => {
+  const response = await aiClient.get('/api/v1/forecast/performance', {
+    params: { days },
+    timeout: 120000
+  });
   return response.data;
 };
+
 
 /**
  * Lấy Volume Profile.
@@ -141,6 +148,19 @@ export const requestVolumeProfile = async (bins = 10) => {
  */
 export const requestForecastPipeline = async () => {
   const response = await aiClient.post('/api/v1/forecast/pipeline', {}, { timeout: 60000 }); // Pipeline có thể lâu do crawl
+  return response.data;
+};
+
+/**
+ * Giao tiếp với AI Assistant.
+ * @param {string} message - Câu hỏi của người dùng
+ * @param {string} context - Bối cảnh hệ thống (tùy chọn)
+ */
+export const requestAssistantChat = async (message, context = null) => {
+  const response = await aiClient.post('/api/v1/assistant/chat', { 
+    message, 
+    context 
+  }, { timeout: 30000 });
   return response.data;
 };
 

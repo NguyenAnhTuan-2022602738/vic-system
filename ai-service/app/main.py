@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logger import logger
-from app.api.routes import forecast, news, health, market
+from app.api.routes import forecast, news, health, market, assistant
 
 
 def create_app() -> FastAPI:
@@ -33,6 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(forecast.router, prefix="/api/v1", tags=["Forecast"])
     app.include_router(news.router, prefix="/api/v1", tags=["News"])
     app.include_router(market.router, prefix="/api/v1", tags=["Market (Phase 05)"])
+    app.include_router(assistant.router, prefix="/api/v1", tags=["AI Assistant"])
 
     logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} đã khởi động")
 

@@ -108,12 +108,24 @@ class PerformancePoint(BaseModel):
     date: str
     strategy_value: float
     benchmark_value: float
+    signal: Optional[str] = "HOLD"
+    daily_return: Optional[float] = 0.0
+
+class BacktestMetrics(BaseModel):
+    """Các chỉ số đo lường hiệu quả Backtest."""
+    total_trades: int
+    win_rate: float
+    profit_factor: float
+    max_drawdown: float
+    sharpe_ratio: float
+    total_return: float
 
 class PerformanceData(BaseModel):
-    """Dữ liệu hiệu suất chiến thuật."""
+    """Dữ liệu hiệu suất chiến thuật chi tiết."""
     symbol: str
     history: list[PerformancePoint]
-    metrics: dict # {'sharpe': 0.5, 'cagr': 0.1, ...}
+    metrics: BacktestMetrics
+
 
 class PerformanceResponse(BaseModel):
     """Schema response cho hiệu suất chiến thuật."""

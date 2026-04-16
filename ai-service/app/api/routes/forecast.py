@@ -75,8 +75,10 @@ async def get_multi_horizon_forecast(
 
 @router.get("/forecast/performance", response_model=PerformanceResponse)
 async def get_strategy_performance(
+    days: int = 30,
     service: ForecastService = Depends(get_forecast_service),
 ):
-    """Lấy dữ liệu hiệu suất chiến thuật so với benchmark."""
-    result = service.get_performance_metrics()
+    """Lấy dữ liệu hiệu suất chiến thuật so với benchmark thông qua backtest."""
+    result = service.get_performance_metrics(days=days)
     return PerformanceResponse(success=True, data=result)
+

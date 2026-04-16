@@ -33,7 +33,9 @@ const translations = {
   "nav.forecast": { vi: "Dự báo", en: "Forecast" },
   "nav.news": { vi: "Tin tức & Cảm xúc", en: "News & Sentiment" },
   "nav.trade": { vi: "Tín hiệu GD", en: "Trade Signals" },
+  "nav.backtest": { vi: "Mô phỏng chiến thuật", en: "Backtest Engine" },
   "nav.risk": { vi: "Phân tích rủi ro", en: "Risk Analysis" },
+
   "nav.settings": { vi: "Cấu hình mô hình", en: "Model Config" },
 
   // Dashboard Page
@@ -56,6 +58,7 @@ const translations = {
   "metric.max_loss": { vi: "Lỗ tối đa", en: "Max loss" },
   "metric.risk_adjusted": { vi: "Điều chỉnh rủi ro", en: "Risk-adjusted" },
   "metric.trades_count": { vi: "24 lệnh", en: "24 trades" },
+  "metric.total_pnl": { vi: "Tổng lãi/lỗ", en: "Total PnL" },
 
   // Charts
   "chart.price_action": { vi: "Biến động giá VIC", en: "VIC Price Action" },

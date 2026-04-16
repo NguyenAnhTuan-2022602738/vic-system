@@ -64,12 +64,14 @@ export const getMultiHorizon = async (req, res, next) => {
 
 export const getPerformance = async (req, res, next) => {
   try {
-    const result = await forecastService.getPerformance();
+    const days = parseInt(req.query.days) || 30;
+    const result = await forecastService.getPerformance(days);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
 };
+
 
 export const getHistoryComparison = async (req, res, next) => {
   try {

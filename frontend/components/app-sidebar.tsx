@@ -36,10 +36,11 @@ export function AppSidebar() {
 
   const navItems = [
     { href: "/", icon: BarChart3, labelKey: "nav.dashboard" as const },
-    { href: "/forecast", icon: TrendingUp, labelKey: "nav.forecast" as const },
     { href: "/news", icon: Newspaper, labelKey: "nav.news" as const },
     { href: "/trade", icon: LineChart, labelKey: "nav.trade" as const },
+    { href: "/backtest", icon: ShieldAlert, labelKey: "nav.backtest" as const },
   ]
+
 
 
   const toggleLocale = () => {
@@ -52,6 +53,7 @@ export function AppSidebar() {
 
   return (
     <aside
+      suppressHydrationWarning
       className={cn(
         "flex flex-col border-r border-border bg-sidebar transition-all duration-300 h-screen sticky top-0",
         collapsed ? "w-16" : "w-60"

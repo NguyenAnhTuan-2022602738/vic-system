@@ -30,12 +30,12 @@ export const forecastService = {
 
     // Lưu phiên bản chạy pipeline này vào bảng History
     const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 3);
+    targetDate.setDate(targetDate.getDate() + 2);
 
     const historyRecord = await ForecastHistory.create({
       symbol: 'VIC',
       target_date: targetDate,
-      horizon: 3,
+      horizon: 2,
       expected_return: data.expected_return,
       lstm_prediction: data.lstm_prediction || 0,
       base_uncertainty: data.base_uncertainty || 0.02,
@@ -112,11 +112,12 @@ export const forecastService = {
     return aiResponse.data;
   },
 
-  async getPerformance() {
-    const aiResponse = await requestPerformanceMetrics();
+  async getPerformance(days = 30) {
+    const aiResponse = await requestPerformanceMetrics(days);
     // aiResponse = { success, data: { symbol, history, metrics } }
     return aiResponse.data;
   },
+
 
   async getHistory(limit = 20) {
     return await ForecastCache.find()
@@ -133,15 +134,16 @@ export const forecastService = {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (requestedDate >= today) {
+    if (requestedDate > today) {
       return { 
         forecast: null, 
         actual: null, 
-        message: "Chế độ Flashback chỉ hỗ trợ dữ liệu lịch sử trước ngày hôm nay." 
+        message: "Chế độ Flashback không hỗ trợ các ngày trong tương lai." 
       };
     }
 
-    console.log(`[Flashback] Khởi mào đối chiếu cho ngày: ${dateString}`);
+    const isToday = requestedDate.getTime() === today.getTime();
+    console.log(`[Flashback] Khởi mào đối chiếu cho ngày: ${dateString}${isToday ? ' (Hôm nay)' : ''}`);
     
     // 1. Kiểm tra xem ngày này đã có bản ghi trong ForecastHistory chưa
     const searchDate = new Date(dateString);
@@ -161,13 +163,13 @@ export const forecastService = {
 
         // Lưu bản ghi mới vào DB
         const targetDate = new Date(dateString);
-        targetDate.setDate(targetDate.getDate() + 3);
+        targetDate.setDate(targetDate.getDate() + 2);
 
         forecast = await ForecastHistory.create({
           symbol: 'VIC',
           timestamp: new Date(dateString), // Đặt đúng ngày quá khứ
           target_date: targetDate,
-          horizon: 3,
+          horizon: 2,
           expected_return: data.expected_return,
           lstm_prediction: data.lstm_prediction || 0,
           risk_var: data.var_95,
@@ -191,12 +193,16 @@ export const forecastService = {
     const history = marketResponse.data;
 
     if (!history || history.length < 1) {
-      return { forecast, actual: null, message: "Không tìm thấy dữ liệu giá thực tế" };
+      return { 
+        forecast, 
+        actual: null, 
+        message: isToday ? "Dự báo ngày hôm nay đã sẵn sàng. Dữ liệu thực tế T+2 sẽ được cập nhật sau khi thị trường kết thúc phiên tương ứng." : "Không tìm thấy dữ liệu giá thực tế cho ngày này." 
+      };
     }
 
-    // Tìm giá Entry (ngày T) và giá Exit (sau 2 phiên giao dịch - tổng 3 phiên T, T+1, T+2)
-    const entryPrice = history[0].close;
-    // index 2 là phiên thứ 3 (T+2)
+    // Tìm giá Entry (ngày T) và giá Exit (ngày T+2)
+    const entryPrice = history[0].close; // Đây là giá đóng cửa thực tế từ CSV/VNDirect
+    // index 2 là phiên thứ 3 (T, T+1, T+2)
     const exitPrice = history.length >= 3 ? history[2].close : history[history.length - 1].close;
     const actualReturn = (exitPrice - entryPrice) / entryPrice;
 
@@ -212,7 +218,8 @@ export const forecastService = {
         uncertainty_str: '±' + Math.abs((forecast.risk_var || forecast.adjusted_uncertainty || forecast.base_uncertainty || 0) * 100).toFixed(2) + '%'
       },
       actual: {
-        entry_price: entryPrice,
+        base_close_price: entryPrice, // Giá CSV thực tế ngày chọn
+        entry_price: entryPrice, 
         exit_price: exitPrice,
         actual_return: actualReturn,
         actual_return_str: (actualReturn * 100).toFixed(2) + '%',

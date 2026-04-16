@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from app.core.config import settings
 from app.core.logger import logger
-from app.domain.forecasting.conditional_model import ConditionalLSTM
+from app.domain.forecasting.hybrid_model import HybridConditionalLSTM
 from app.domain.forecasting.manual_rf import ManualRandomForest
 from app.domain.forecasting.manual_linear_regression import ManualLinearRegression
 from app.domain.forecasting.feature_builder import build_features
@@ -32,7 +32,7 @@ class ForecastService:
     """Điều phối pipeline dự báo đa mô hình."""
 
     def __init__(self):
-        self.model: ConditionalLSTM | None = None
+        self.model: HybridConditionalLSTM | None = None
         self.scaler: FeatureScaler | None = None
         self.market_service = MarketDataService()
         self.news_service = NewsService()
@@ -56,9 +56,9 @@ class ForecastService:
         self._train_comparison_models()
 
     def _load_model(self):
-        """Tải mô hình LSTM đã train từ ổ đĩa."""
+        """Tải mô hình LSTM Hybrid đã train từ ổ đĩa."""
         try:
-            self.model = ConditionalLSTM(input_size=len(FEATURE_COLS))
+            self.model = HybridConditionalLSTM(input_size=len(FEATURE_COLS))
             if os.path.exists(settings.MODEL_PATH):
                 state_dict = torch.load(
                     settings.MODEL_PATH, map_location="cpu", weights_only=True
@@ -75,7 +75,7 @@ class ForecastService:
                 self.model.eval()
         except Exception as e:
             logger.error(f"Lỗi tải mô hình LSTM: {e}")
-            self.model = ConditionalLSTM(input_size=len(FEATURE_COLS))
+            self.model = HybridConditionalLSTM(input_size=len(FEATURE_COLS))
             self.model.eval()
 
     def _load_scaler(self):
@@ -297,61 +297,162 @@ class ForecastService:
         self._cache[cache_key] = (results, now)
         return results
 
-    def get_performance_metrics(self) -> dict:
-        """Tính toán hiệu suất chiến thuật dựa trên backtest lịch sử - Có cache."""
-        cache_key = "performance_metrics"
-        now = time.time()
-
-        if cache_key in self._cache:
-            cache_data, timestamp = self._cache[cache_key]
-            if now - timestamp < self._cache_expiry:
-                return cache_data
-
+    def get_performance_metrics(self, days: int = 30) -> dict:
+        """Thực hiện Backtest thực tế trên dữ liệu lịch sử - PHIÊN BẢN TỐI ƯU SIÊU TỐC."""
         try:
-            df = self.market_service.get_vic_history()
-            if df.empty:
-                return {"symbol": "VIC", "history": [], "metrics": {}}
+            full_history = self.market_service.get_vic_history()
+            if full_history.empty or len(full_history) < days + 65:
+                # Cần tối thiểu 60 phiên để làm window cho LSTM + số ngày backtest
+                return {"symbol": "VIC", "history": [], "metrics": self._empty_metrics()}
 
-            # Lấy 60 phiên gần nhất để mô phỏng
-            df_recent = df.tail(60).copy()
-            df_recent['returns'] = df_recent['close'].pct_change().fillna(0)
+            # 1. TÍNH TOÁN FEATURES TOÀN BỘ (CHỈ LÀM 1 LẦN)
+            logger.info("⚡ Đang tiền xử lý dữ liệu cho Backtest...")
+            df_enriched = build_features(full_history)
             
-            # Mô phỏng: Nếu p_gain > 0.55 thì "Buy", ngược lại "Cash/Hold"
-            # Lưu ý: Đây là mô phỏng nhanh dựa trên dữ liệu đã có
-            strategy_returns = []
-            benchmark_returns = []
+            # 2. CHUẨN HÓA TOÀN BỘ (LSTM & MANUAL)
+            if self.scaler:
+                df_scaled = self.scaler.transform(df_enriched)
+            else:
+                df_scaled = df_enriched
             
+            # Lấy data dùng cho inference
+            all_sequences = df_scaled[FEATURE_COLS].values
+            
+            # 3. CHUẨN BỊ VÒNG LẶP BACKTEST
+            history = []
+            daily_returns = []
             curr_strat_val = 100.0
             curr_bench_val = 100.0
-            
-            history = []
-            
-            for i, row in df_recent.iterrows():
-                # Giả lập tín hiệu từ p_gain (thực tế nên chạy inference từng bước)
-                # Ở đây ta dùng noise để giả lập sự khác biệt
-                sig = 1 if np.random.random() > 0.4 else 0 
-                
-                ret = row['returns']
-                curr_bench_val *= (1 + ret)
-                curr_strat_val *= (1 + ret * sig)
-                
-                history.append({
-                    "date": row['date'],
-                    "strategy_value": round(curr_strat_val, 2),
-                    "benchmark_value": round(curr_bench_val, 2)
-                })
+            winning_trades = 0
+            total_trades = 0
+            gross_profit = 0.0
+            gross_loss = 0.0
 
-            result = {
-                "symbol": "VIC",
-                "history": history,
-                "metrics": {
-                    "sharpe": 1.42,
-                    "win_rate": 0.64,
-                    "max_drawdown": -0.08
-                }
+            # Lấy mốc index bắt đầu (lùi lại 'days' phiên từ cuối)
+            start_idx = len(df_enriched) - days
+            
+            logger.info(f"🚀 Bắt đầu quá trình Backtesting Siêu tốc cho {days} phiên...")
+            
+            # Tắt grad để tăng tốc PyTorch
+            with torch.no_grad():
+                for i in range(start_idx, len(df_enriched)):
+                    # Lấy dữ liệu mô phỏng tại ngày i (nghĩa là dự báo TRƯỚC ngày i)
+                    # Window 60 phiên dừng tại i-1
+                    # Cần cẩn thận index: values[i-60:i]
+                    seq_data = all_sequences[i-60:i]
+                    if len(seq_data) < 60: continue
+                    
+                    seq_tensor = torch.tensor(seq_data, dtype=torch.float32).unsqueeze(0)
+                    horizon_tensor = torch.tensor([[2]], dtype=torch.float32)
+                    
+                    # Chạy model cực nhanh (In-memory)
+                    mu, sigma = self.model(seq_tensor, horizon_tensor)
+                    mu_val = float(mu.item())
+                    sigma_val = float(sigma.item())
+                    
+                    # Giả định News trung tính (0) để tối ưu tốc độ backtest
+                    # p_gain = probability_gain(mu_val, sigma_val)
+                    p_gain = float(torch.sigmoid(mu / (sigma + 1e-6)).item()) # Xấp xỉ nhanh
+                    
+                    # Logic quyết định mua (Giữ nguyên logic cũ)
+                    # Recommendation logic đơn giản: mu_val > 0.005 (0.5%)
+                    action = 1 if (mu_val > 0.005 or p_gain > 0.55) else 0
+                    
+                    # Tính toán PnL thực tế
+                    current_row = df_enriched.iloc[i]
+                    actual_ret = 0.0
+                    if i + 1 < len(df_enriched):
+                        actual_ret = (df_enriched.iloc[i+1]['close'] / current_row['close']) - 1
+                    
+                    # Cập nhật vốn
+                    strat_ret = actual_ret * action
+                    curr_strat_val *= (1 + strat_ret)
+                    curr_bench_val *= (1 + actual_ret)
+                    daily_returns.append(strat_ret)
+
+                    if action == 1:
+                        total_trades += 1
+                        if actual_ret > 0:
+                            winning_trades += 1
+                            gross_profit += actual_ret
+                        else:
+                            gross_loss += abs(actual_ret)
+
+                    history.append({
+                        "date": current_row['date'],
+                        "strategy_value": round(curr_strat_val, 2),
+                        "benchmark_value": round(curr_bench_val, 2),
+                        "signal": "BUY" if action == 1 else "HOLD",
+                        "daily_return": round(actual_ret, 4)
+                    })
+
+            # 4. TÍNH TOÁN METRICS TỔNG HỢP
+            win_rate = (winning_trades / total_trades) if total_trades > 0 else 0
+            profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else (100 if gross_profit > 0 else 0)
+            std_dev = np.std(daily_returns) if len(daily_returns) > 1 else 1e-6
+            sharpe = (np.mean(daily_returns) / (std_dev + 1e-9)) * np.sqrt(252)
+
+            # Max Drawdown
+            strat_vals = [h['strategy_value'] for h in history]
+            peak = strat_vals[0]
+            max_dd = 0
+            for v in strat_vals:
+                if v > peak: peak = v
+                dd = (v - peak) / peak
+                if dd < max_dd: max_dd = dd
+
+            metrics = {
+                "total_trades": total_trades,
+                "win_rate": round(win_rate * 100, 2),
+                "profit_factor": round(profit_factor, 2),
+                "max_drawdown": round(max_dd * 100, 2),
+                "sharpe_ratio": round(sharpe, 2),
+                "total_return": round((curr_strat_val - 100), 2)
             }
-            self._cache[cache_key] = (result, now)
-            return result
+
+            logger.info(f"✅ Backtest Tối ưu hoàn tất. Tốc độ: {len(history)} phiên trong nháy mắt.")
+            return {"symbol": "VIC", "history": history, "metrics": metrics}
         except Exception as e:
-            logger.error(f"Error in get_performance_metrics: {e}")
-            return {"symbol": "VIC", "history": [], "metrics": {}}
+            logger.error(f"Error in optimized Backtest: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"symbol": "VIC", "history": [], "metrics": self._empty_metrics()}
+
+        except Exception as e:
+            logger.error(f"Error in real Backtest: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"symbol": "VIC", "history": [], "metrics": self._empty_metrics()}
+
+    def get_context_summary(self) -> str:
+        """Tổng hợp bối cảnh hiện tại của hệ thống để cung cấp cho AI Assistant."""
+        try:
+            # 1. Lấy dự báo mới nhất
+            forecast = self.predict(horizon=2, force_refresh=False)
+            
+            # 2. Lấy giá hiện tại
+            history = self.market_service.get_vic_history()
+            current_price = history.iloc[-1]['close'] if not history.empty else 0
+            
+            # 3. Lấy metrics so sánh
+            comp = forecast.get("comparison", [])
+            comp_str = ", ".join([f"{m['name']}: {m['expected_return']:.2%}" for m in comp])
+            
+            # 4. Tin tức
+            news = self.news_service.get_latest_news(limit=2)
+            news_titles = [n.get('title', 'N/A') for n in news]
+            
+            summary = (
+                f"Symbol: VIC\n"
+                f"Current Price: {current_price:,.0f} VND\n"
+                f"Recommendation: {forecast.get('recommendation', 'N/A')}\n"
+                f"Probability of Gain: {forecast.get('probability_gain', 0):.1%}\n"
+                f"Model Returns: {comp_str}\n"
+                f"Sentiment Impact: {forecast.get('avg_impact', 0):.2f}\n"
+                f"Recent News: {'; '.join(news_titles)}"
+            )
+            return summary
+        except Exception as e:
+            logger.error(f"Error getting context summary: {e}")
+            return "Hệ thống đang hoạt động. Không thể lấy dữ liệu chi tiết ngay lúc này."
+

@@ -10,9 +10,9 @@ from app.domain.risk.var_calculator import calculate_var
 def make_recommendation(
     mu: float,
     sigma: float,
-    p_gain_threshold: float = 0.65,
+    p_gain_threshold: float = 0.58,
     var_threshold: float = -0.03,
-    sharpe_threshold: float = 0.5,
+    sharpe_threshold: float = 0.35,
 ) -> str:
     """
     Tạo khuyến nghị giao dịch: BUY, HOLD, hoặc AVOID.

@@ -21,10 +21,10 @@ class PipelineService:
         logger.info("[Pipeline] Bước 1: Cập nhật dữ liệu từ VNDirect...")
         self.market_service.update_csv_if_needed()
         
-        # 2. Sử dụng ForecastService để chạy dự báo T+2 (horizon=3)
+        # 2. Sử dụng ForecastService để chạy dự báo T+2 (horizon=2)
         # ForecastService đã xử lý: build_features, scaling, LSTM, Sentiment Fusion, Risk VaR.
-        logger.info("[Pipeline] Bước 2: Chạy ForecastService Inference (Horizon=3, Force Refresh)...")
-        forecast_data = self.forecast_service.predict(horizon=3, target_return=0.05, force_refresh=True)
+        logger.info("[Pipeline] Bước 2: Chạy ForecastService Inference (Horizon=2, Force Refresh)...")
+        forecast_data = self.forecast_service.predict(horizon=2, target_return=0.05, force_refresh=True)
 
         # 3. Lấy giá đóng cửa gần nhất từ CSV
         df_history = self.market_service.get_vic_history()

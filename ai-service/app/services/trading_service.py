@@ -26,14 +26,14 @@ class TradingService:
         Returns:
             Dict containing action, confidence, stop_loss, and take_profit.
         """
-        # 1. Determine Action
+        # 1. Determine Action (Optimized for active trading)
         action = "HOLD"
         confidence = probability_gain
         
-        # Heuristic rules for signals
-        if expected_return > 0.02 and probability_gain > 0.60 and sentiment_score > -0.1:
+        # Heuristic rules for signals (More aggressive)
+        if expected_return > 0.012 and probability_gain > 0.55 and sentiment_score > -0.1:
             action = "BUY"
-        elif expected_return < -0.01 or (sentiment_score < -0.3 and probability_gain < 0.45):
+        elif expected_return < -0.005 or (sentiment_score < -0.3 and probability_gain < 0.45):
             action = "SELL"
             
         # 2. Risk Management (Stop Loss / Take Profit)

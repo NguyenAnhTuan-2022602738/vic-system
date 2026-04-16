@@ -347,7 +347,6 @@ export async function checkHealth(): Promise<boolean> {
   } catch {
     return false
   }
-}
 // === AI Assistant ===
 
 export interface ChatResponse {
@@ -361,3 +360,6 @@ export async function askAssistant(message: string, context?: string): Promise<C
     body: JSON.stringify({ message, context }),
   })
 }
+
+
+

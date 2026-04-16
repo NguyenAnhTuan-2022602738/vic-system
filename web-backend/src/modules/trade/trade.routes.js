@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { getTrades, createTrade, updateTrade, deleteTrade } from './trade.controller.js';
+import { getTrades, createTrade, updateTrade, deleteTrade, getTradeStats } from './trade.controller.js';
 
 const router = Router();
 
