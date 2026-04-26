@@ -2,10 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, BrainCircuit, Activity, LineChart, AlertCircle } from "lucide-react"
+import { TrendingUp, TrendingDown, BrainCircuit, Activity, LineChart, AlertCircle, BarChart as BarChartIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ModelComparison } from "@/lib/api"
 import { useI18n } from "@/lib/i18n"
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
 interface ModelComparisonCardsProps {
   data?: ModelComparison[]
@@ -51,7 +52,7 @@ export function ModelComparisonCards({ data, loading }: ModelComparisonCardsProp
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-right-4 duration-700 h-full">
       {displayData.map((model, idx) => {
         const info = getModelInfo(model.name)
         const isPositive = model.expected_return >= 0
@@ -64,7 +65,7 @@ export function ModelComparisonCards({ data, loading }: ModelComparisonCardsProp
             "backdrop-blur-md"
           )}>
             <div className={cn("absolute top-0 left-0 w-full h-1", `bg-${info.color}-500/40`)} />
-            <CardContent className="p-5">
+            <CardContent className="p-4 flex flex-col justify-center h-full">
               <div className="flex items-start justify-between mb-4">
                 <div className={cn("p-2.5 rounded-xl border", info.borderColor, "bg-background/40 shadow-inner")}>
                   {info.icon}
@@ -74,54 +75,73 @@ export function ModelComparisonCards({ data, loading }: ModelComparisonCardsProp
                 </Badge>
               </div>
               
-              <div className="space-y-1">
-                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{model.name}</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className={cn(
-                    "text-3xl font-black font-mono tracking-tighter",
-                    isPositive ? "text-emerald-400" : "text-rose-400"
-                  )}>
-                    {isPositive ? "+" : ""}{(model.expected_return * 100).toFixed(2)}%
-                  </span>
-                  {isPositive ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-500/70" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-rose-500/70" />
-                  )}
+              <div className="space-y-0.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{model.name}</h3>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={cn(
+                      "text-xl font-black font-mono tracking-tighter",
+                      isPositive ? "text-emerald-400" : "text-rose-400"
+                    )}>
+                      {isPositive ? "+" : ""}{(model.expected_return * 100).toFixed(2)}%
+                    </span>
+                    {isPositive ? (
+                      <TrendingUp className="w-3 h-3 text-emerald-500/70" />
+                    ) : (
+                      <TrendingDown className="w-3 h-3 text-rose-500/70" />
+                    )}
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-relaxed h-8 line-clamp-2 italic">
+                <p className="text-[9px] text-muted-foreground leading-tight italic opacity-70">
                   {info.desc}
                 </p>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[9px] text-muted-foreground uppercase font-semibold">Reliability (MAE)</span>
-                  <span className="text-sm font-bold font-mono text-foreground/80">
-                    {(model.mae * 100).toFixed(2)}%
-                  </span>
-                </div>
-                <div className="h-6 w-px bg-white/5" />
-                <div className="flex flex-col text-right">
-                  <span className="text-[9px] text-muted-foreground uppercase font-semibold">Signal Status</span>
-                  <Badge className={cn(
-                    "text-[9px] h-5",
-                    isPositive ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border-rose-500/30"
-                  )}>
-                    {isPositive ? "PROFITABLE" : "RISKY"}
-                  </Badge>
-                </div>
-              </div>
             </CardContent>
-            
-            {/* Subtle background glow on hover */}
-            <div className={cn(
-              "absolute -bottom-12 -right-12 w-24 h-24 rounded-full blur-[40px] opacity-0 group-hover:opacity-20 transition-opacity duration-500",
-              `bg-${info.color}-500`
-            )} />
           </Card>
         )
       })}
+      {/* MAE Comparison Chart */}
+      <Card className="border border-border bg-card/50 backdrop-blur-md overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChartIcon className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Model Reliability (MAE)</span>
+          </div>
+          <div className="h-[120px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={displayData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis type="number" hide />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={100} 
+                  tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.4)' }}
+                  tickFormatter={(val) => val.split(' (')[0]}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', fontSize: '10px' }}
+                  formatter={(val: number) => [`${(val * 100).toFixed(2)}%`, "MAE"]}
+                />
+                <Bar dataKey="mae" radius={[0, 4, 4, 0]} barSize={12}>
+                  {displayData.map((entry, index) => {
+                    const info = getModelInfo(entry.name)
+                    return <Cell key={`cell-${index}`} fill={
+                      info.color === 'blue' ? '#60a5fa' : info.color === 'emerald' ? '#34d399' : '#fbbf24'
+                    } fillOpacity={0.6} />
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center justify-between mt-2 px-1">
+            <p className="text-[8px] text-muted-foreground italic leading-none">* Lower MAE means higher prediction accuracy</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

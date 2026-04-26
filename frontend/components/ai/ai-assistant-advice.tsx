@@ -64,12 +64,8 @@ export function AIAssistantAdvice({ recommendation, expectedReturn, confidence, 
           <TypewriterText text={getSummary()} speed={15} delay={0.5} />
         </div>
 
-        <div className="flex items-center gap-4 pt-2">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-background/50 border border-slate-700 rounded-full">
-            <Info className="w-3 h-3 text-slate-400" />
-            <span className="text-[10px] text-slate-400">Độ tin cậy: {Math.round(confidence * 100)}%</span>
-          </div>
-        </div>
+
+
       </div>
     </div>
   )

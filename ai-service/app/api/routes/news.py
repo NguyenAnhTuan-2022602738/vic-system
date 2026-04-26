@@ -47,15 +47,21 @@ async def analyze_news_batch(
 @router.get("/news/latest")
 async def get_latest_news(
     limit: int = 5,
+    page: int = 1,
     force_refresh: bool = False,
+    hours: int = None,
     service: NewsService = Depends(get_news_service),
 ):
     """
-    Lấy và phân tích tin tức VIC mới nhất.
-    Tự động scrape từ các nguồn tin và chạy phân tích tâm lý.
+    Lấy và phân tích tin tức VIC mới nhất (Hỗ trợ phân trang).
     """
-    results = service.fetch_and_analyze(limit=limit, force_refresh=force_refresh)
-    return {"success": True, "data": results, "count": len(results)}
+    results = service.fetch_and_analyze(
+        limit=limit, 
+        page=page, 
+        force_refresh=force_refresh,
+        hours_limit=hours
+    )
+    return {"success": True, "data": results}
 
 
 @router.post("/news/backfill")

@@ -61,7 +61,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
     // Lấy dữ liệu lịch sử
     const fetchHistory = async () => {
       try {
-        const response = await fetch('http://localhost:3005/api/v1/market/history?startDate=2024-06-01');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3005';
+        const response = await fetch(`${API_URL}/api/v1/market/history?startDate=2024-06-01`);
         const json = await response.json();
         const items = Array.isArray(json) ? json : (json.data || []);
 

@@ -7,35 +7,56 @@ from app.domain.news_analysis.llm_loader import query_llm
 from app.core.logger import logger
 
 
-def analyze_sentiment(text: str) -> float:
+def analyze_sentiment(title: str, content: str = "") -> dict:
     """
-    Phân tích tâm lý (sentiment) của bài tin tức tiếng Việt.
-
-    Sử dụng LLM tự host (Vistral-7B hoặc Qwen2.5-7B) qua Ollama
-    để hiểu văn bản tiếng Việt và trả về điểm tâm lý.
-
-    Tham số:
-        text: Nội dung bài tin tức tiếng Việt
-
-    Trả về:
-        sentiment_score trong [-1, 1]
-        -1 = rất tiêu cực, 0 = trung tính, 1 = rất tích cực
+    Phân tích tâm lý sâu dựa trên tiêu đề và nội dung chi tiết bài báo.
     """
-    prompt = f"""Bạn là chuyên gia phân tích tài chính. Hãy đánh giá tâm lý (sentiment) của tin tức sau đây đối với cổ phiếu VIC (Vingroup).
+    # Tối ưu nội dung để không quá dài
+    truncated_content = content[:2000] if content else "Không có nội dung chi tiết."
+    
+    prompt = f"""Bạn là chuyên gia phân tích tài chính cao cấp của hệ thống VIC. Hãy đánh giá tác động của tin tức sau đối với Vingroup (VIC).
 
-Tin tức: "{text}"
+TIÊU ĐỀ: "{title}"
+NỘI DUNG CHI TIẾT: "{truncated_content}"
 
-Trả về DUY NHẤT một số thực từ -1.0 đến 1.0:
-- -1.0: Rất tiêu cực (tin xấu nghiêm trọng)
-- 0.0: Trung tính
-- 1.0: Rất tích cực (tin tốt mạnh)
+NHIỆM VỤ:
+1. Đối chiếu Tiêu đề và Nội dung bài báo để phát hiện mâu thuẫn hoặc tin giật gân.
+2. Đánh giá tác động tài chính: Tin tức này ảnh hưởng thế nào đến VIC?
+3. Đưa ra điểm số Sentiment từ -1.0 (Tiêu cực) đến 1.0 (Tích cực).
 
-Chỉ trả về số, không giải thích."""
+YÊU CẦU TRẢ VỀ JSON DUY NHẤT:
+{{
+    "sentiment": <số thực từ -1.0 đến 1.0>,
+    "reasoning": "<Giải thích ngắn gọn 1 câu dựa trên bằng chứng trong nội dung>",
+    "category": <"Direct"|"Industry"|"Macro"|"Global"|"Geopolitical">,
+    "impact_score": <độ mạnh của tin từ 0 đến 1>
+}}
+
+Chỉ trả về JSON, không giải thích gì thêm."""
 
     try:
+        import json
         response = query_llm(prompt)
-        score = float(response.strip())
-        return max(-1.0, min(1.0, score))  # Giới hạn trong [-1, 1]
-    except (ValueError, Exception) as e:
+        
+        # Làm sạch response
+        clean_response = response.strip()
+        if "```json" in clean_response:
+            clean_response = clean_response.split("```json")[1].split("```")[0].strip()
+        elif "```" in clean_response:
+            clean_response = clean_response.split("```")[1].split("```")[0].strip()
+            
+        result = json.loads(clean_response)
+        return {
+            "sentiment": max(-1.0, min(1.0, float(result.get("sentiment", 0.0)))),
+            "reasoning": result.get("reasoning", "Dựa trên phân tích nội dung chi tiết."),
+            "category": result.get("category", "Market"),
+            "impact_score": float(result.get("impact_score", 0.5))
+        }
+    except Exception as e:
         logger.warning(f"Phân tích tâm lý thất bại: {e}. Trả về trung tính.")
-        return 0.0
+        return {
+            "sentiment": 0.0,
+            "reasoning": "Không thể phân tích nội dung chi tiết.",
+            "category": "Market",
+            "impact_score": 0.3
+        }

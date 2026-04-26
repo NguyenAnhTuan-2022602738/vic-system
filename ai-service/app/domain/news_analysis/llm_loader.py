@@ -30,7 +30,8 @@ def query_llm(prompt: str, temperature: float = 0.1) -> str:
     }
 
     try:
-        response = requests.post(url, json=payload, timeout=30)
+        # Tăng timeout lên 120s vì Ollama có thể phản hồi chậm khi CPU/GPU đang bận
+        response = requests.post(url, json=payload, timeout=120)
         response.raise_for_status()
         return response.json().get("response", "")
     except requests.exceptions.ConnectionError:
@@ -38,10 +39,13 @@ def query_llm(prompt: str, temperature: float = 0.1) -> str:
             f"Không thể kết nối Ollama tại {settings.OLLAMA_BASE_URL}. "
             "Hãy chắc chắn Ollama đang chạy."
         )
-        raise
+        return ""
     except requests.exceptions.Timeout:
-        logger.error("Yêu cầu Ollama bị hết thời gian chờ.")
-        raise
+        logger.error("⚠️ Yêu cầu Ollama bị hết thời gian chờ (Timeout 120s).")
+        return ""
+    except Exception as e:
+        logger.error(f"Lỗi không xác định khi gọi AI: {e}")
+        return ""
 
 
 def check_ollama_health() -> bool:

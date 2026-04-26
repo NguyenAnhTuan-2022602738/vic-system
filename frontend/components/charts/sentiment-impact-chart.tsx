@@ -15,8 +15,9 @@ export function SentimentImpactChart() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const news = await getLatestNews(30)
-        const points = news.map((n) => ({
+        const response = await getLatestNews(30)
+        const news = response.news || []
+        const points = news.map((n: any) => ({
           sentiment: n.sentiment_score ?? 0,
           impact: n.impact_weight ?? 0.5,
           title: n.title.slice(0, 40) + "...",

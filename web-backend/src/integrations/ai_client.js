@@ -31,11 +31,12 @@ export const requestForecast = async ({ horizon, target_return = 0.05, alpha = 0
  * Lấy tin tức mới nhất từ dịch vụ AI.
  * @param {number} limit - Số lượng tin tức
  * @param {boolean} forceRefresh - Ép cào mới (bypass cache) hay không
+ * @param {number} page - Trang hiện tại
  * @returns {Promise<object>} Danh sách tin tức kèm cảm xúc
  */
-export const requestLatestNews = async (limit = 5, forceRefresh = false) => {
+export const requestLatestNews = async (limit = 5, forceRefresh = false, page = 1) => {
   const response = await aiClient.get('/api/v1/news/latest', {
-    params: { limit, force_refresh: forceRefresh },
+    params: { limit, force_refresh: forceRefresh, page },
     timeout: 60000,
   });
   return response.data;

@@ -26,8 +26,11 @@ export const getRecentNews = async (req, res, next) => {
 
 export const getLatestNews = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit) || 5;
-    const news = await newsService.getLatest(limit);
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
+    const force = req.query.force === 'true';
+    
+    const news = await newsService.getLatest(limit, force, page);
     res.json({ success: true, data: news, meta: { timestamp: new Date().toISOString() } });
   } catch (error) {
     next(error);

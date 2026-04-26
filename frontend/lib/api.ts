@@ -3,12 +3,14 @@
  * Có fallback sang mock data khi server không khả dụng.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3005"
 
 export interface NewsItem {
   id: string
   title: string
   source: string
+  category?: string
+  trust_score?: number
   timestamp: string
   time_display?: string
   url: string
@@ -73,6 +75,8 @@ export interface PipelineResult {
   impact_weight: number
   final_action: string
   confidence: number
+  stop_loss: number
+  take_profit: number
   last_price_used: number
   latest_news_analyzed: number
   comparison_data?: ModelComparison[]
@@ -258,8 +262,14 @@ export async function analyzeNews(text: string): Promise<NewsAnalysisResult> {
   })
 }
 
-export async function getLatestNews(limit = 10): Promise<NewsItem[]> {
-  return apiFetch<NewsItem[]>(`/api/v1/news/latest?limit=${limit}`)
+export interface PaginatedNews {
+  news: NewsItem[]
+  total_count: number
+  page: number
+}
+
+export async function getLatestNews(limit = 10, page = 1): Promise<PaginatedNews> {
+  return apiFetch<PaginatedNews>(`/api/v1/news/latest?limit=${limit}&page=${page}`)
 }
 
 export async function triggerNewsCrawl(limit = 10): Promise<NewsItem[]> {

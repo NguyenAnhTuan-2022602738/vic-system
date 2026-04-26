@@ -17,6 +17,12 @@ ta>=0.11.0
 vnstock
 scikit-learn
 joblib
+feedparser
+beautifulsoup4
+
+# Database
+motor
+pymongo
 
 # HTTP client (for Ollama)
 requests>=2.31.0

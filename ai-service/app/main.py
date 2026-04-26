@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logger import logger
 from app.api.routes import forecast, news, health, market, assistant
+from app.infrastructure.mongodb import mongodb
 
 
 def create_app() -> FastAPI:
@@ -18,6 +19,10 @@ def create_app() -> FastAPI:
         version=settings.APP_VERSION,
         description="Hệ thống Dự báo Lợi nhuận Cổ phiếu VIC",
     )
+
+    @app.on_event("startup")
+    async def startup_db_client():
+        mongodb.connect()
 
     # Cấu hình CORS cho phép frontend truy cập
     app.add_middleware(

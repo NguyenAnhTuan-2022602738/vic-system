@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AppSidebar } from '@/components/app-sidebar'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -7,12 +7,15 @@ import { I18nProvider } from '@/lib/i18n'
 import { DashboardProvider } from '@/context/dashboard-context'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["vietnamese", "latin"],
+  variable: "--font-inter",
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'VIC Forecast | Probabilistic Forecasting System',
-  description: 'VIC Multimodal Conditional Probabilistic Forecasting System - Advanced stock analysis with LLM-powered news sentiment integration',
+  title: 'VIC Forecast | Hệ thống Dự báo Dòng tiền & Cảm xúc Thị trường',
+  description: 'VIC Multimodal Conditional Probabilistic Forecasting System - Hệ thống hỗ trợ ra quyết định thông minh đầu tư cổ phiếu VIC',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -45,12 +48,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning className={inter.variable}>
       <body className="font-sans antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          enableSystem={false}
           disableTransitionOnChange={false}
         >
           <I18nProvider>

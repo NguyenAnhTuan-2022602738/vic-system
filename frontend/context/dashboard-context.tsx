@@ -80,7 +80,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     return {
       horizon: 3,
       expected_return: p.expected_return,
-      uncertainty: p.risk_var,
+      uncertainty: p.adjusted_uncertainty || p.base_uncertainty,
       probability_gain: p.win_rate,
       probability_target: p.win_rate,
       var_95: p.risk_var,
@@ -91,9 +91,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       trading_signal: {
         action: p.final_action as any,
         confidence: p.confidence,
-        stop_loss: 0,
-        take_profit: 0,
-        risk_level: (p.risk_var > 0.05 ? "High" : "Medium") as "High" | "Medium" | "Low"
+        stop_loss: p.stop_loss ?? 0,
+        take_profit: p.take_profit ?? 0,
+        risk_level: (p.adjusted_uncertainty > 0.04 ? "High" : p.adjusted_uncertainty > 0.02 ? "Medium" : "Low") as "High" | "Medium" | "Low"
       }
     }
   }, [])
@@ -134,9 +134,28 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   const refreshData = async () => {
     setIsSyncing(true)
-    await loadData()
-    setLastSyncTime(new Date().toLocaleTimeString())
-    setIsSyncing(false)
+    const toastId = "pipeline-update";
+    const { toast } = await import("sonner");
+    
+    toast.loading("Đang cào dữ liệu T-1 và chạy AI dự báo...", { id: toastId });
+    
+    try {
+      const { triggerForecastPipeline } = await import("@/lib/api");
+      const result = await triggerForecastPipeline();
+      
+      if (result) {
+        toast.success("Cập nhật dữ liệu và dự báo thành công!", { id: toastId });
+        await loadData();
+        setLastSyncTime(new Date().toLocaleTimeString());
+      } else {
+        toast.error("Pipeline thất bại hoặc không có dữ liệu mới.", { id: toastId });
+      }
+    } catch (err) {
+      console.error("Refresh pipeline error:", err);
+      toast.error("Lỗi khi kết nối với máy chủ AI Service.", { id: toastId });
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
   return (

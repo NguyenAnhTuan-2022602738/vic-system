@@ -13,18 +13,23 @@ import { RefreshCw, Zap } from "lucide-react"
 export default function NewsPage() {
   const { t } = useI18n()
   const [pipelineData, setPipelineData] = useState<PipelineResult | null>(null)
-  const [newsData, setNewsData] = useState<NewsItem[]>([])
+  const [paginatedData, setPaginatedData] = useState<{ news: NewsItem[], total_count: number, page: number }>({ news: [], total_count: 0, page: 1 })
   const [loading, setLoading] = useState(true)
   const [isCrawling, setIsCrawling] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const fetchAllData = async (forceCrawl = false) => {
+  const fetchAllData = async (forceCrawl = false, page = 1) => {
     if (forceCrawl) setIsCrawling(true)
     else setLoading(true)
 
     try {
-      // Nếu là forceCrawl thì gọi trigger, ngược lại gọi getLatest
-      const news = forceCrawl ? await triggerNewsCrawl(15) : await getLatestNews(10)
-      setNewsData(news)
+      if (forceCrawl) {
+        await triggerNewsCrawl(10)
+      }
+      
+      // Gọi API lấy tin tức theo trang
+      const result = await getLatestNews(10, page)
+      setPaginatedData(result)
 
       const pipeline = await getLatestPipeline()
       setPipelineData(pipeline)
@@ -37,11 +42,12 @@ export default function NewsPage() {
   }
 
   useEffect(() => {
-    fetchAllData()
-  }, [])
+    fetchAllData(false, currentPage)
+  }, [currentPage])
 
   const handleCrawl = () => {
-    fetchAllData(true)
+    fetchAllData(true, 1) // Cào xong quay lại trang 1
+    setCurrentPage(1)
   }
 
   return (
@@ -80,7 +86,12 @@ export default function NewsPage() {
           <NewsImpactModel data={pipelineData} />
         </div>
 
-        <NewsList data={newsData} loading={loading || isCrawling} />
+        <NewsList 
+          data={paginatedData} 
+          loading={loading || isCrawling} 
+          page={currentPage}
+          onPageChange={setCurrentPage}
+        />
       </main>
     </div>
   )

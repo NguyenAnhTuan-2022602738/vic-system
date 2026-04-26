@@ -8,89 +8,82 @@ import { NewsCache } from './news.repository.js';
 
 export const newsService = {
   /**
-   * Lấy tin tức mới nhất - Ưu tiên lấy từ cache MongoDB, nếu cũ hoặc ép buộc mới gọi AI.
-   * @param {number} limit - Số lượng tin tức
    * @param {boolean} force - Ép cào mới (bypass cache) hay không
+   * @param {number} page - Số trang
    */
-  async getLatest(limit = 10, force = false) {
-    // 1. Kiểm tra tin tức trong cache (trong vòng 24 giờ qua, bỏ qua nếu force=true)
+  async getLatest(limit = 10, force = false, page = 1) {
+    const skip = (page - 1) * limit;
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const cachedNews = !force ? await NewsCache.find({ 
-      updatedAt: { $gte: twentyFourHoursAgo } 
-    }).sort({ published_at: -1 }).limit(limit) : [];
 
-    if (!force && cachedNews.length > 0) {
-      console.log(`[NewsService] 🚀 Lấy ${cachedNews.length} tin từ MongoDB Cache trong 200ms.`);
-      // Có đủ tin mới trong cache
-      return cachedNews.map(n => ({
-        ...n.toObject(),
-        id: n._id.toString(),
-        title: n.text_preview,
-        timestamp: n.published_at || n.createdAt,
-        time_display: this.getTimeDisplay(n.published_at || n.createdAt)
-      }));
+    // 1. Kiểm tra dữ liệu hiện có trong MongoDB của Backend
+    const localNewsCount = await NewsCache.countDocuments();
+    const localNews = await NewsCache.find()
+      .sort({ published_at: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Xác định xem có cần gọi Robot (AI Service) không?
+    // Cần gọi khi: force=true HOẶC (Trang 1 và hết hạn) HOẶC (Trang này chưa có dữ liệu trong Backend)
+    const needsSync = force || 
+                     (page === 1 && (localNews.length === 0 || localNews[0].updatedAt < twentyFourHoursAgo)) ||
+                     (localNews.length === 0 && localNewsCount > 0 && skip < 100); // Thử lấy thêm nếu chưa quá sâu
+
+    if (!needsSync && localNews.length > 0) {
+      console.log(`[NewsService] 🏠 Phục vụ Trang ${page} trực tiếp từ Backend DB (${localNews.length} tin).`);
+      return {
+        news: localNews.map(n => ({
+          ...n.toObject(),
+          id: n._id.toString(),
+          title: n.title,
+          summary: n.reasoning,
+          timestamp: n.published_at || n.updated_at,
+          time_display: this.getTimeDisplay(n.published_at || n.updated_at)
+        })),
+        total_count: localNewsCount,
+        page: page
+      };
     }
 
-    // 2. Nếu không đủ, cũ hoặc force=true, gọi AI service để quét RSS mới
+    // 2. Đồng bộ từ Robot (AI Service)
     try {
-      console.log(`[NewsService] Calling AI Service (limit: ${limit}, force: ${force})...`);
-      const response = await requestLatestNews(limit, force);
-      const newsFromAI = response.data; // FastAPI trả về { success, data: [...] }
-      
-      console.log(`[NewsService] News array length: ${newsFromAI?.length || 0}`);
+      console.log(`[NewsService] 📡 Đồng bộ dữ liệu từ Robot cho Trang ${page}...`);
+      const response = await requestLatestNews(limit, force, page);
+      // requestLatestNews đã trả về trực tiếp response.data từ axios, nên response chính là payload
+      const apiResult = response || {}; 
+      const newsFromAI = apiResult.news || [];
+      const totalCount = apiResult.total_count || localNewsCount;
 
-      if (!Array.isArray(newsFromAI) || newsFromAI.length === 0) {
-        console.warn('[NewsService] No news to cache or invalid format.');
-        return await NewsCache.find().sort({ published_at: -1 }).limit(limit);
-      }
+      // AI Service ĐÃ tự động lưu vào bảng `news` rồi. 
+      // Web-Backend chỉ việc nhận và trả về cho client, không cần save lại nữa (để tránh lặp dữ liệu và xung đột ID).
 
-      // 3. Lưu/Cập nhật vào MongoDB (Upsert)
-      const newsPromises = newsFromAI.map(async (item) => {
-        try {
-          const articleTitle = item.title || item.text_preview || "Tin tức VIC (Cập nhật...)";
-          const textHash = crypto.createHash('md5').update(articleTitle).digest('hex');
-          
-          return await NewsCache.findOneAndUpdate(
-            { text_hash: textHash },
-            {
-              text_preview: articleTitle.substring(0, 500),
-              text_hash: textHash,
-              sentiment_score: item.sentiment_score || 0,
-              impact_weight: item.impact_weight || 1.0,
-              source: item.source || "Thi trường",
-              url: item.url,
-              published_at: item.timestamp ? new Date(item.timestamp) : new Date(),
-            },
-            { upsert: true, new: true }
-          );
-        } catch (e) {
-          console.error(`[NewsService] Failed to upsert article:`, e.message);
-          return null;
-        }
-      });
+      // Trả về kết quả sau khi đã đồng bộ
+      return {
+        news: newsFromAI.map(n => ({
+          ...n,
+          title: n.title,
+          summary: n.reasoning,
+          timestamp: n.timestamp,
+          time_display: this.getTimeDisplay(n.timestamp || new Date())
+        })),
+        total_count: totalCount,
+        page: page
+      };
 
-      await Promise.all(newsPromises);
-
-      // Trả về dữ liệu mới nhất từ DB để đồng bộ format
-      const finalNews = await NewsCache.find().sort({ published_at: -1 }).limit(limit);
-      return finalNews.map(n => ({
-        ...n.toObject(),
-        id: n._id.toString(),
-        title: n.text_preview,
-        timestamp: n.published_at || n.createdAt,
-        time_display: this.getTimeDisplay(n.published_at || n.createdAt)
-      }));
     } catch (error) {
-      console.error('Error fetching/caching news:', error);
-      // Nếu lỗi AI Service, cố gắng trả về dữ liệu cũ nhất có thể
-      const fallbackNews = await NewsCache.find().sort({ published_at: -1 }).limit(limit);
-      return fallbackNews.map(n => ({
-        ...n.toObject(),
-        id: n._id.toString(),
-        title: n.text_preview,
-        timestamp: n.published_at || n.createdAt,
-        time_display: this.getTimeDisplay(n.published_at || n.createdAt)
-      }));
+      console.error('[NewsService] ❌ Lỗi đồng bộ từ Robot:', error.message);
+      // Fallback: Trả về những gì đang có trong database nội bộ
+      return {
+        news: localNews.map(n => ({
+          ...n.toObject(),
+          id: n._id.toString(),
+          title: n.title,
+          summary: n.reasoning,
+          timestamp: n.published_at || n.updated_at,
+          time_display: this.getTimeDisplay(n.published_at || n.updated_at)
+        })),
+        total_count: localNewsCount,
+        page: page
+      };
     }
   },
 

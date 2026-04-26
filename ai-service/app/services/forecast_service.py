@@ -182,7 +182,7 @@ class ForecastService:
             logger.error(f"Error preparing inference data: {e}")
             return torch.randn(1, 60, len(FEATURE_COLS)), np.zeros((1, 8))
 
-    def predict(self, horizon: int, target_return: float = 0.05, alpha: float = 0.05, beta: float = 0.2, force_refresh: bool = False, manual_sentiment: float = None, base_date: str = None) -> dict:
+    def predict(self, horizon: int, target_return: float = 0.05, alpha: float = 0.3, beta: float = 0.2, force_refresh: bool = False, manual_sentiment: float = None, base_date: str = None) -> dict:
         """Dự báo đa phương thức (Technical + Sentiment) - Hỗ trợ Backfill."""
         cache_key = f"predict_{horizon}_{target_return}_{alpha}_{beta}_{base_date or 'latest'}"
         now = time.time()
@@ -212,11 +212,22 @@ class ForecastService:
         if manual_sentiment is not None:
             avg_sentiment = manual_sentiment
             avg_impact = 0.5 # Default impact for manual scenario
-            analyzed_news = []
+            news_list = []
             logger.info(f"[ForecastService] Using Manual Sentiment for Scenario: {avg_sentiment}")
         else:
-            news_items = self.news_service.get_latest_news(limit=5)
-            avg_sentiment, avg_impact, analyzed_news = self.sentiment_analyzer.analyze_news_list(news_items)
+            # Lấy TẤT CẢ tin tức trong 48 giờ qua để tính toán sentiment tổng hợp
+            news_result = self.news_service.fetch_and_analyze(limit=100, hours_limit=48)
+            news_list = news_result.get("news", [])
+            
+            if news_list:
+                # Tính toán lại trung bình từ danh sách đã lọc và áp Time Decay
+                total_weighted_score = sum(item["sentiment_score"] * item["impact_weight"] for item in news_list)
+                total_impact = sum(item["impact_weight"] for item in news_list)
+                avg_sentiment = total_weighted_score / total_impact if total_impact > 0 else 0.0
+                avg_impact = total_impact / len(news_list) if len(news_list) > 0 else 0.0
+            else:
+                avg_sentiment = 0.0
+                avg_impact = 0.15 # Baseline impact
 
         # 3. Sentiment Fusion (Adjustment) - MULTIPLICATIVE LOGIC
         mu_adj = mu_val * (1 + (alpha * avg_sentiment * avg_impact))
@@ -272,7 +283,7 @@ class ForecastService:
             "recommendation": make_recommendation(mu_adj, sigma_adj),
             "sentiment_score": avg_sentiment,
             "impact_weight": round(avg_impact, 4),
-            "news": analyzed_news,
+            "news": news_list,
             "comparison": comparison,
             "trading_signal": signal
         }

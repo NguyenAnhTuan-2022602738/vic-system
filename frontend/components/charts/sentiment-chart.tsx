@@ -15,7 +15,8 @@ export function SentimentChart() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const news = await getLatestNews(20)
+        const response = await getLatestNews(20)
+        const news = response.news || []
         const timeline = news.reverse().map((n: any, i) => {
           const dateStr = n.timestamp || n.published_at || n.createdAt;
           return {
@@ -86,9 +87,10 @@ export function SentimentDistribution() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const news = await getLatestNews(20)
-        const pos = news.filter(n => (n.sentiment_score ?? 0) > 0.1).length
-        const neg = news.filter(n => (n.sentiment_score ?? 0) < -0.1).length
+        const response = await getLatestNews(20)
+        const news = response.news || []
+        const pos = news.filter((n: any) => (n.sentiment_score ?? 0) > 0.1).length
+        const neg = news.filter((n: any) => (n.sentiment_score ?? 0) < -0.1).length
         const neu = news.length - pos - neg
         
         setData([

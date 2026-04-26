@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # MongoDB
+    MONGO_URI: str = "mongodb+srv://tuannguyen10112004:tuannguyencoder@cluster0.xsi5t.mongodb.net/vic_system"
+    DATABASE_NAME: str = "vic_system"
+
     # CORS - cho phép truy cập từ frontend và backend
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
@@ -35,6 +39,29 @@ class Settings(BaseSettings):
     # Tham số điều chỉnh dự báo theo tin tức
     ALPHA: float = 0.3  # Mức ảnh hưởng sentiment lên μ
     BETA: float = 0.2   # Mức ảnh hưởng sentiment lên σ
+
+    # Trọng số độ tin cậy của nguồn tin (Source Trust Factor)
+    SOURCE_TRUST_LEVELS: dict[str, float] = {
+        "Chính phủ": 1.0,
+        "HOSE": 1.0,
+        "Ngân hàng Nhà nước": 1.0,
+        "VTV Business": 0.95,
+        "VnEconomy": 0.9,
+        "Báo Đầu tư": 0.9,
+        "Reuters": 0.85,
+        "CafeF": 0.8,
+        "Vietstock": 0.8,
+        "Default": 0.7
+    }
+
+    # Trọng số ảnh hưởng theo loại tin tức
+    CATEGORY_WEIGHTS: dict[str, float] = {
+        "Direct": 1.2,    # Tin trực tiếp về VIC/Vingroup
+        "Industry": 1.0,  # Tin về ngành BĐS/Xe điện
+        "Macro": 0.9,     # Tin vĩ mô Việt Nam
+        "Global": 0.8,    # Tin vĩ mô thế giới
+        "Market": 0.7     # Tin thị trường chung
+    }
 
     class Config:
         env_file = ".env"

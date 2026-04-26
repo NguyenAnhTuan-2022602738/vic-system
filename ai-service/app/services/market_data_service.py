@@ -68,64 +68,59 @@ class MarketDataService:
                 return False
 
         try:
-            # T-1 (Ngày giao dịch gần nhất)
-            end_date = datetime.now()
-            end_date_str = end_date.strftime('%Y-%m-%d')
-            last_date_plus_1 = last_date + timedelta(days=1)
-            last_date_str = last_date_plus_1.strftime('%Y-%m-%d')
+            # Logic thông minh: Nếu sau 15:30 (giờ VN), coi như đã có giá T (hôm nay).
+            now = datetime.now()
+            is_after_market_close = now.hour > 15 or (now.hour == 15 and now.minute >= 30)
+            
+            # Điều kiện cập nhật
+            should_update = False
+            if last_date.date() < (now - timedelta(days=1)).date():
+                should_update = True
+            elif last_date.date() == (now - timedelta(days=1)).date() and is_after_market_close:
+                should_update = True
 
-            if last_date.date() < (datetime.now() - timedelta(days=1)).date():
-                logger.info(f"Dữ liệu CSV đang dừng ở {last_date.strftime('%Y-%m-%d')}. Đang dùng vnstock để lấy từ {last_date_str} đến {end_date_str}...")
+            if should_update:
+                last_date_plus_1 = last_date + timedelta(days=1)
+                last_date_str = last_date_plus_1.strftime('%Y-%m-%d')
+                end_date_str = now.strftime('%Y-%m-%d')
                 
-                # Khởi tạo Vnstock (Source VCI như anh yêu cầu)
-                stock = Vnstock().stock(symbol="VIC", source="VCI")
+                logger.info(f"Dữ liệu CSV đang dừng ở {last_date.strftime('%Y-%m-%d')}. Đang lấy từ {last_date_str} đến {end_date_str}...")
                 
-                # Lấy dữ liệu OHLCV
+                # Khởi tạo Vnstock (Bản 3.5.1+ tự động chọn nguồn tối ưu nhất)
+                stock = Vnstock().stock(symbol="VIC")
                 df_new = stock.quote.history(start=last_date_str, end=end_date_str, interval="1D")
                 
                 if df_new is not None and not df_new.empty:
-                    # Chuẩn hóa tên cột (lấy đúng open, high, low, close, volume)
+                    # Chuẩn hóa tên cột
                     df_new.columns = [c.lower().replace(" ", "_") for c in df_new.columns]
-                    
-                    # Mapping cột nếu cần (vnstock thường trả về 'time' hoặc 'date')
                     if 'time' in df_new.columns:
                         df_new = df_new.rename(columns={'time': 'date'})
                     
-                    # Đảm bảo đủ các cột OHLCV
-                    required_cols = ['date', 'open', 'high', 'low', 'close']
-                    if not all(col in df_new.columns for col in required_cols):
-                         logger.error(f"Dữ liệu vnstock thiếu cột: {df_new.columns}")
-                         return False
-
-                    # Volume mapping
                     for col in df_new.columns:
                         if 'vol' in col and 'volume' not in df_new.columns:
                             df_new = df_new.rename(columns={col: 'volume'})
 
-                    # Chuyển đổi đơn vị (vnstock thường trả về giá thực tế như 47000, 
-                    # nhưng nếu nó trả về 47.4 thì mình sẽ x1000)
                     for col in ['open', 'high', 'low', 'close']:
                         if df_new[col].max() < 1000:
                             df_new[col] = df_new[col] * 1000
                     
                     df_new['date'] = pd.to_datetime(df_new['date'])
                     
-                    # Merge vào bộ dữ liệu cũ
                     if not df.empty:
+                        df['date'] = pd.to_datetime(df['date'])
                         df = pd.concat([df, df_new], ignore_index=True)
                     else:
                         df = df_new
                         
-                    # Dọn dẹp dữ liệu
                     df = df.drop_duplicates(subset=['date']).sort_values('date')
                     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
                     
-                    # Chỉ lưu các cột quan trọng
                     keep_cols = ['date', 'open', 'high', 'low', 'close', 'volume']
                     df = df[[c for c in keep_cols if c in df.columns]]
-                    
                     df.to_csv(self.CSV_PATH, index=False)
-                    logger.info(f"✅ Đã gối đầu {len(df_new)} phiên mới thành công!")
+                    
+                    self._df_cache = None
+                    logger.info(f"✅ Đã gối đầu {len(df_new)} phiên mới thành công! (Cache đã xóa)")
                     return True
                 else:
                     logger.info("Vnstock không tìm thấy dữ liệu mới hơn.")
@@ -133,7 +128,9 @@ class MarketDataService:
                 logger.info(f"Dữ liệu trong CSV đã là mới nhất ({last_date.strftime('%Y-%m-%d')}).")
             return False
         except Exception as e:
-            logger.error(f"Lỗi khi cập nhật dữ liệu VNDirect: {e}")
+            import traceback
+            logger.error(f"Lỗi khi cập nhật dữ liệu: {str(e)}")
+            logger.error(traceback.format_exc())
             return False
 
     def get_enriched_history(self, start_date: str = "2024-01-01", end_date: str = None) -> list:
@@ -150,15 +147,19 @@ class MarketDataService:
         df['ma20'] = compute_ma(df['close'], 20)
         df['volatility'] = compute_volatility(df['close'])
         
-        # Làm sạch dữ liệu để tránh lỗi 500 (JSON Serialization error khi có NaN hoặc Inf)
-        df = df.replace([np.inf, -np.inf], 0).fillna(0)
+        # Làm sạch dữ liệu triệt để (Tránh lỗi 500 JSON Serialization khi có NaN/Inf)
+        # Các chỉ báo như RSI/MACD thường có NaN ở các dòng đầu tiên
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.fillna(0)
         
-        # Đảm bảo các chỉ báo là kiểu số thực và được làm tròn
+        # Đảm bảo tất cả các cột số đều hợp lệ
         numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'rsi', 'macd', 'macd_signal', 'ma20', 'volatility']
         for col in numeric_cols:
             if col in df.columns:
-                df[col] = df[col].astype(float).round(2)
+                # Ép kiểu float và làm tròn để giảm kích thước JSON
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(float).round(2)
         
+        # Chuyển đổi sang list dict để trả về API
         return df.to_dict(orient="records")
 
 

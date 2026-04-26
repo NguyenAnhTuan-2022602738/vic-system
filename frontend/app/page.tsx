@@ -155,7 +155,7 @@ export default function DashboardPage() {
   }
 
   const setupSocket = () => {
-    const socketUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3005"
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3005"
     const socket = io(socketUrl, {
       transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
@@ -295,54 +295,29 @@ export default function DashboardPage() {
           <CandlestickChart className="min-h-[450px]" liveData={liveData} />
         </div>
 
-        {/* ROW 2: FORECAST & AI ADVICE (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ForecastCard 
-            data={selectedDate ? { ...forecast!, news: historicalNews } as any : forecast} 
-            isLive={isLive} 
-            loading={isLoading || isFlashbackLoading}
-            params={{ alpha, beta, targetReturn, horizon }}
-            onParamChange={(newParams) => {
-              if (newParams.alpha !== undefined) setAlpha(newParams.alpha)
-              if (newParams.beta !== undefined) setBeta(newParams.beta)
-              if (newParams.targetReturn !== undefined) setTargetReturn(newParams.targetReturn)
-              if (newParams.horizon !== undefined) setHorizon(newParams.horizon)
-            }}
-          />
-          <TradingSignals signal={forecast?.trading_signal} loading={isLoading} />
-        </div>
-
-        {/* ROW 3: HIDDEN METRIC CARDS & COMPARISON */}
-        <div className="hidden">
-           {/* All MetricCards are now hidden as requested by the user */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <MetricCard
-              label={t("metric.current_price")}
-              value={currentPriceStr}
-              subValue="VND"
-              iconName="bar-chart"
-              trend={Number(priceTrendValue) >= 0 ? "up" : "down"}
-              trendValue={`${Math.abs(Number(priceTrendValue))}%`}
-              className={priceFlash === "up" ? "animate-pulse bg-green-500/10" : priceFlash === "down" ? "animate-pulse bg-red-500/10" : ""}
+        {/* ROW 2: FORECAST & MODEL COMPARISON (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+          <div className="lg:col-span-3">
+            <ForecastCard 
+              data={selectedDate ? { ...forecast!, news: historicalNews } as any : forecast} 
+              isLive={isLive} 
+              loading={isLoading || isFlashbackLoading}
+              params={{ alpha, beta, targetReturn, horizon }}
+              onParamChange={(newParams) => {
+                if (newParams.alpha !== undefined) setAlpha(newParams.alpha)
+                if (newParams.beta !== undefined) setBeta(newParams.beta)
+                if (newParams.targetReturn !== undefined) setTargetReturn(newParams.targetReturn)
+                if (newParams.horizon !== undefined) setHorizon(newParams.horizon)
+              }}
             />
-            <MetricCard
-              label={t("metric.expected_return")}
-              value={expectedReturnStr}
-              subValue="3 ngày (T+2)"
-              iconName="trending-up"
-              trend={retTrend}
-              trendValue={simulationData ? "SIMULATED" : (isLive ? "LIVE" : t("common.adjusted"))}
-              className={simulationData ? "border-indigo-500/30 bg-indigo-500/5 backdrop-blur-sm" : ""}
-            />
+          </div>
+          <div className="lg:col-span-3">
+            <ModelComparisonCards data={forecast?.comparison} loading={isLoading} />
           </div>
         </div>
 
-        <ModelComparisonCards data={forecast?.comparison} loading={isLoading} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <HorizonChart />
-          <PerformanceChart />
-        </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
