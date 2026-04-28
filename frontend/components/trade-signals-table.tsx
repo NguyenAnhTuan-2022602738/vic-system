@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -111,7 +111,12 @@ Giao dịch cổ phiếu ${trade.symbol}:
         "Phân tích ngắn gọn giao dịch này: so sánh dự đoán AI vs thực tế, nhận xét quyết định, bài học rút ra. Tối đa 3-4 câu.",
         context
       )
-      setInlineAnalysis(prev => ({ ...prev, [trade._id]: response.answer }))
+      if (response && response.answer) {
+        setInlineAnalysis(prev => ({ ...prev, [trade._id]: response.answer }))
+      } else {
+        console.warn("AI Response missing answer:", response)
+        setInlineAnalysis(prev => ({ ...prev, [trade._id]: "⚠️ AI không trả về câu trả lời. Thử lại sau." }))
+      }
     } catch (error) {
       setInlineAnalysis(prev => ({ ...prev, [trade._id]: "⚠️ Không kết nối được AI. Thử lại sau." }))
     } finally {
@@ -190,7 +195,7 @@ Giao dịch cổ phiếu ${trade.symbol}:
                   </tr>
                 ) : (
                   trades.map((trade) => (
-                    <>
+                    <React.Fragment key={trade._id}>
                       <tr key={trade._id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
                         {/* Date & Symbol */}
                         <td className="py-3 px-2">
@@ -372,7 +377,7 @@ Giao dịch cổ phiếu ${trade.symbol}:
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))
                 )}
               </tbody>

@@ -208,7 +208,8 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   const json = await res.json()
-  return json.data as T
+  // Trả về json.data nếu có, nếu không trả về toàn bộ json (hỗ trợ các route chỉ trả về message)
+  return (json.data !== undefined ? json.data : json) as T
 }
 
 // === Forecast ===

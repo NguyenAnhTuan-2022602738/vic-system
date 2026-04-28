@@ -2,11 +2,13 @@
  * VIC Web Backend — Ứng dụng Express
  */
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 
 import http from 'node:http';
 import { Server } from 'socket.io';
@@ -20,8 +22,6 @@ import tradeRoutes from './modules/trade/trade.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import marketRoutes from './modules/market/market.routes.js';
 import assistantRoutes from './modules/assistant/assistant.routes.js';
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);

@@ -32,8 +32,10 @@ export function DashboardHeader({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary border border-border">
           <span className="text-xs font-mono font-semibold text-foreground">VIC</span>
-          <span className="text-xs font-mono text-success">
-            {currentPrice !== undefined ? currentPrice.toLocaleString() : "47,800"}
+          <span className="text-xs font-mono text-success" suppressHydrationWarning>
+            {currentPrice !== undefined 
+              ? new Intl.NumberFormat('vi-VN').format(currentPrice) 
+              : "47.800"}
           </span>
           {priceChange !== undefined && (
             <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${priceChange >= 0 ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}>
