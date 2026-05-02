@@ -178,13 +178,18 @@ export interface PerformanceResult {
 
 
 export interface HistoryComparisonResult {
-  forecast: PipelineResult & { expected_return_str: string; uncertainty_str?: string };
+  forecast: PipelineResult & { 
+    expected_return_str: string; 
+    uncertainty_str?: string;
+    comparison_data?: Array<{name: string; expected_return: number; mae: number}>;
+  };
   actual: {
     entry_price: number;
     exit_price: number;
     actual_return: number;
     actual_return_str: string;
     exit_date: string;
+    base_close_price?: number;
   } | null;
   accuracy: {
     error_margin: string;

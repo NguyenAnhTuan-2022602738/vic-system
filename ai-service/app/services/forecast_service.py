@@ -98,7 +98,7 @@ class ForecastService:
                 return
 
             df = build_features(history)
-            features = ['rsi', 'macd', 'ma20', 'volatility', 'open', 'high', 'low', 'close']
+            features = ['rsi', 'macd', 'ma20', 'volatility', 'open', 'high', 'low', 'close', 'volume_norm']
             df['target_return'] = df['close'].pct_change().shift(-1)
             df = df.dropna(subset=features + ['target_return'])
 
@@ -164,7 +164,7 @@ class ForecastService:
             df_features = build_features(df)
             
             # Scale for Manual models (using saved manual_norm)
-            comparison_features = ['rsi', 'macd', 'ma20', 'volatility', 'open', 'high', 'low', 'close']
+            comparison_features = ['rsi', 'macd', 'ma20', 'volatility', 'open', 'high', 'low', 'close', 'volume_norm']
             raw_comp_data = df_features[comparison_features].iloc[-1:].values
             
             latest_comparison_data = (raw_comp_data - self.manual_norm["mean"]) / self.manual_norm["std"]
@@ -233,7 +233,7 @@ class ForecastService:
         mu_adj = mu_val * (1 + (alpha * avg_sentiment * avg_impact))
         sigma_adj = sigma_val * (1 + (beta * abs(avg_sentiment) * avg_impact))
 
-        # 4. Manual Models Prediction (Base on technical only for comparison)
+        # 4. Manual Models Prediction + Sentiment Fusion (đồng bộ với LSTM để so sánh công bằng)
         def _safe_float(val):
             try:
                 f = float(val)
@@ -242,10 +242,15 @@ class ForecastService:
                 return 0.0
 
         rf_vals = self.rf_model.predict(latest_comparison_data)
-        rf_pred = _safe_float(rf_vals[0]) if rf_vals is not None and len(rf_vals) > 0 else 0.0
-        
+        rf_pred_raw = _safe_float(rf_vals[0]) if rf_vals is not None and len(rf_vals) > 0 else 0.0
+
         lr_vals = self.lr_model.predict(latest_comparison_data)
-        lr_pred = _safe_float(lr_vals[0]) if lr_vals is not None and len(lr_vals) > 0 else 0.0
+        lr_pred_raw = _safe_float(lr_vals[0]) if lr_vals is not None and len(lr_vals) > 0 else 0.0
+
+        # Áp dụng cùng Sentiment Fusion (alpha=0.3) cho RF và LR
+        # → So sánh công bằng: cùng kỹ thuật + cùng sentiment, chỉ khác kiến trúc mô hình
+        rf_pred = rf_pred_raw * (1 + (alpha * avg_sentiment * avg_impact))
+        lr_pred = lr_pred_raw * (1 + (alpha * avg_sentiment * avg_impact))
 
         # 5. Generate Trading Signal (Phase 08)
         current_price = 47800.0 # Default if no data
@@ -264,11 +269,11 @@ class ForecastService:
             probability_gain=probability_gain(mu_adj, sigma_adj)
         )
 
-        # 6. Build Multi-Model Comparison Data (MỚI)
+        # 6. Build Multi-Model Comparison Data — Cả 3 đều có Sentiment Fusion
         comparison = [
             {"name": "LSTM (News Fusion)", "expected_return": round(mu_adj, 4), "mae": self.metrics.get("lstm", 0.0437)},
-            {"name": "Random Forest (Technical Only)", "expected_return": round(rf_pred, 4), "mae": self.metrics.get("rf", 0.0521)},
-            {"name": "Linear Regression (Baseline)", "expected_return": round(lr_pred, 4), "mae": self.metrics.get("lr", 0.0612)},
+            {"name": "Random Forest (with Sentiment)", "expected_return": round(rf_pred, 4), "mae": self.metrics.get("rf", 0.0521)},
+            {"name": "Linear Regression (with Sentiment)", "expected_return": round(lr_pred, 4), "mae": self.metrics.get("lr", 0.0612)},
         ]
 
         result = {

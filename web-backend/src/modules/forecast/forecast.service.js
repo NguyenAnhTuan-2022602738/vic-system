@@ -154,33 +154,50 @@ export const forecastService = {
       timestamp: { $gte: startOfDay, $lte: endOfDay }
     });
 
-    // 2. CƠ CHẾ BACKFILL: Nếu chưa có, gọi AI Service làm bù
-    if (!forecast) {
-      console.log(`[Flashback] ⚠️ Không tìm thấy dự báo cũ cho ngày ${dateString}. Đang chạy Backfill...`);
+    // 2. CHƯA CÓ DỰ BÁO CHO NGÀY NÀY HOẶC THIẾU DỮ LIỆU COMPARISON -> CHẠY BACKFILL
+    if (!forecast || !forecast.comparison_data || forecast.comparison_data.length === 0) {
+      console.log(`[Flashback] 🔄 Đang chạy/cập nhật Backfill cho ngày ${dateString} (Lý do: ${!forecast ? 'Chưa có record' : 'Thiếu comparison_data'})...`);
       try {
         const aiResponse = await requestBackfill({ base_date: dateString });
         const data = aiResponse.data;
 
-        // Lưu bản ghi mới vào DB
+        // Lưu bản ghi mới hoặc cập nhật bản ghi cũ
         const targetDate = new Date(dateString);
         targetDate.setDate(targetDate.getDate() + 2);
 
-        forecast = await ForecastHistory.create({
-          symbol: 'VIC',
-          timestamp: new Date(dateString), // Đặt đúng ngày quá khứ
-          target_date: targetDate,
-          horizon: 2,
-          expected_return: data.expected_return,
-          lstm_prediction: data.lstm_prediction || 0,
-          risk_var: data.var_95,
-          win_rate: data.probability_gain,
-          sharpe_ratio: 1.5, // Default
-          sentiment_score: data.sentiment_score,
-          final_action: data.recommendation,
-          confidence: data.confidence || 0.75,
-          last_price_used: data.last_price_used || 0
-        });
-        console.log(`[Flashback] ✅ Đã tạo bản ghi Backfill thành công: ID=${forecast._id}`);
+        if (forecast) {
+          // Cập nhật bản ghi hiện tại
+          forecast.expected_return = data.expected_return;
+          forecast.lstm_prediction = data.lstm_prediction || 0;
+          forecast.risk_var = data.var_95;
+          forecast.win_rate = data.probability_gain;
+          forecast.sentiment_score = data.sentiment_score;
+          forecast.final_action = data.recommendation;
+          forecast.confidence = data.confidence || 0.75;
+          forecast.last_price_used = data.last_price_used || 0;
+          forecast.comparison_data = data.comparison || [];
+          await forecast.save();
+          console.log(`[Flashback] ✅ Đã cập nhật bản ghi hiện tại: ID=${forecast._id}`);
+        } else {
+          // Tạo mới
+          forecast = await ForecastHistory.create({
+            symbol: 'VIC',
+            timestamp: new Date(dateString),
+            target_date: targetDate,
+            horizon: 2,
+            expected_return: data.expected_return,
+            lstm_prediction: data.lstm_prediction || 0,
+            risk_var: data.var_95,
+            win_rate: data.probability_gain,
+            sharpe_ratio: 1.5,
+            sentiment_score: data.sentiment_score,
+            final_action: data.recommendation,
+            confidence: data.confidence || 0.75,
+            last_price_used: data.last_price_used || 0,
+            comparison_data: data.comparison || []
+          });
+          console.log(`[Flashback] ✅ Đã tạo bản ghi Backfill mới: ID=${forecast._id}`);
+        }
       } catch (err) {
         console.error(`[Flashback] Lỗi khi chạy Backfill:`, err.message);
         throw new Error(`Không thể chạy dự báo bù cho ngày ${dateString}`);
@@ -215,7 +232,8 @@ export const forecastService = {
         ...forecast.toObject(),
         expected_return_str: (forecast.expected_return * 100).toFixed(2) + '%',
         uncertainty: Math.abs(forecast.risk_var || forecast.adjusted_uncertainty || forecast.base_uncertainty || 0),
-        uncertainty_str: '±' + Math.abs((forecast.risk_var || forecast.adjusted_uncertainty || forecast.base_uncertainty || 0) * 100).toFixed(2) + '%'
+        uncertainty_str: '±' + Math.abs((forecast.risk_var || forecast.adjusted_uncertainty || forecast.base_uncertainty || 0) * 100).toFixed(2) + '%',
+        comparison_data: forecast.comparison_data || []  // RF + Linear data
       },
       actual: {
         base_close_price: entryPrice, // Giá CSV thực tế ngày chọn

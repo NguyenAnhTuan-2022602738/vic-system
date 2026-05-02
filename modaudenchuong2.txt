@@ -1,0 +1,536 @@
+MỞ ĐẦU
+	Lí do chọn đề tài
+Trong bối cảnh hội nhập kinh tế quốc tế ngày càng sâu rộng, thị trường chứng khoán Việt Nam đã và đang khẳng định vai trò là một kênh huy động vốn quan trọng, góp phần thúc đẩy tăng trưởng kinh tế quốc gia. Sự gia tăng nhanh chóng về số lượng nhà đầu tư cá nhân, cùng với sự tham gia của các tổ chức tài chính trong và ngoài nước, đã làm cho thị trường trở nên sôi động nhưng đồng thời cũng tiềm ẩn nhiều biến động khó lường. Giá cổ phiếu không chỉ phản ánh nội tại doanh nghiệp mà còn chịu ảnh hưởng bởi nhiều yếu tố bên ngoài như chính sách vĩ mô, biến động kinh tế toàn cầu, thông tin truyền thông và đặc biệt là tâm lý thị trường.
+Trong số các doanh nghiệp niêm yết trên thị trường chứng khoán Việt Nam, Vingroup là một trong những tập đoàn kinh tế tư nhân lớn nhất, hoạt động đa ngành và có ảnh hưởng sâu rộng đến nhiều lĩnh vực của nền kinh tế. Cổ phiếu VIC thuộc nhóm cổ phiếu vốn hóa lớn (blue-chip), có trọng số đáng kể trong chỉ số VN-Index, do đó biến động của mã cổ phiếu này không chỉ phản ánh tình hình của riêng doanh nghiệp mà còn có thể tác động đến xu hướng chung của toàn thị trường. Việc nghiên cứu và dự báo biến động giá cổ phiếu VIC vì thế mang ý nghĩa thực tiễn cao, vừa giúp hiểu rõ hơn hành vi thị trường, vừa hỗ trợ nhà đầu tư đưa ra quyết định hợp lý.
+Song song với sự phát triển của thị trường tài chính, lĩnh vực trí tuệ nhân tạo (Artificial Intelligence – AI), đặc biệt là học sâu (Deep Learning), đã có những bước tiến vượt bậc. Các mô hình học sâu như Long Short-Term Memory (LSTM) đã chứng minh khả năng vượt trội trong việc xử lý dữ liệu chuỗi thời gian, nhờ khả năng ghi nhớ dài hạn và học được các mối quan hệ phi tuyến tính phức tạp. Điều này đặc biệt phù hợp với dữ liệu tài chính, vốn có tính nhiễu cao và phụ thuộc mạnh vào các yếu tố trong quá khứ.
+Tuy nhiên, một hạn chế lớn của các phương pháp dự báo truyền thống là chỉ tập trung vào dữ liệu định lượng (giá, khối lượng giao dịch, chỉ báo kỹ thuật), trong khi thị trường chứng khoán lại chịu ảnh hưởng đáng kể từ thông tin định tính, đặc biệt là tin tức và tâm lý nhà đầu tư. Những thông tin như chính sách mới, kết quả kinh doanh, hoặc các sự kiện bất ngờ có thể gây ra biến động mạnh trong thời gian ngắn, điều mà các mô hình thuần kỹ thuật khó có thể nắm bắt kịp thời.
+Sự ra đời của các Mô hình ngôn ngữ lớn (Large Language Models – LLM) đã mở ra một hướng tiếp cận mới trong việc xử lý dữ liệu văn bản. Các mô hình này có khả năng phân tích, hiểu và lượng hóa nội dung tin tức thành các chỉ số cảm xúc (sentiment), từ đó giúp chuyển đổi thông tin định tính thành dữ liệu số có thể tích hợp vào mô hình dự báo. Việc kết hợp giữa mô hình học sâu (LSTM) và phân tích cảm xúc từ LLM tạo nên một mô hình lai (Hybrid Model), cho phép tận dụng đồng thời cả dữ liệu định lượng và định tính, nâng cao khả năng dự báo trong môi trường tài chính phức tạp.
+Xuất phát từ nhu cầu thực tiễn và tiềm năng ứng dụng đó, em đã lựa chọn đề tài “Dự báo biến động giá cổ phiếu Vingroup bằng mô hình học sâu kết hợp phân tích tin tức” nhằm nghiên cứu, xây dựng và đánh giá hiệu quả các mô hình AI trong dự báo thị trường chứng khoán Việt Nam.
+	Mục tiêu nghiên cứu
+Mục tiêu tổng quát của đề tài là xây dựng một hệ thống dự báo biến động giá cổ phiếu VIC dựa trên mô hình trí tuệ nhân tạo kết hợp giữa phân tích kỹ thuật và phân tích cảm xúc tin tức, từ đó đánh giá hiệu quả và khả năng ứng dụng thực tiễn của hệ thống.
+Các mục tiêu cụ thể bao gồm:
+Thu thập, xử lý và chuẩn hóa dữ liệu giá cổ phiếu của Vingroup (OHLCV) trong khoảng thời gian nghiên cứu, đảm bảo dữ liệu đầu vào đầy đủ và nhất quán. 
+Nghiên cứu và xây dựng các mô hình dự báo bao gồm: 
+Mô hình học sâu LSTM cho dữ liệu chuỗi thời gian. 
+Mô hình Random Forest nhằm khai thác các quan hệ phi tuyến tính. 
+Mô hình Linear Regression làm mô hình cơ sở (baseline) để so sánh. 
+Xây dựng cơ chế phân tích và lượng hóa tin tức tài chính thông qua LLM, từ đó tạo ra các chỉ số cảm xúc và mức độ tác động (impact score). 
+Kết hợp mô hình LSTM với tín hiệu sentiment để tạo thành mô hình lai (Hybrid AI), giúp cải thiện độ chính xác dự báo. 
+Đánh giá hiệu quả của các mô hình thông qua các chỉ số như RMSE, MAE, MAPE đối với dự báo giá, và Accuracy, Win-rate đối với tín hiệu giao dịch. 
+Đề xuất các hướng ứng dụng thực tiễn của hệ thống trong hỗ trợ ra quyết định đầu tư và quản trị rủi ro.
+	Phương pháp nghiên cứu
+Để đạt được các mục tiêu đề ra, đề tài sử dụng kết hợp nhiều phương pháp nghiên cứu khác nhau, bao gồm:
+3.1. Nghiên cứu tài liệu
+Tiến hành khảo sát và tổng hợp các công trình nghiên cứu liên quan đến:
+Mô hình học sâu, đặc biệt là mạng nơ-ron hồi tiếp LSTM trong dự báo chuỗi thời gian tài chính. 
+Các phương pháp phân tích cảm xúc (Sentiment Analysis) và ứng dụng của LLM trong xử lý ngôn ngữ tự nhiên. 
+Các chỉ số tài chính như Sharpe Ratio, Value at Risk (VaR) và các phương pháp đánh giá hiệu quả đầu tư. 
+3.2. Xử lý dữ liệu đa nguồn
+Dữ liệu định lượng (Quantitative Data): 
+Thu thập dữ liệu giá cổ phiếu (Open, High, Low, Close, Volume). 
+Tính toán các chỉ báo kỹ thuật như RSI, MACD, MA20, Volatility. 
+Chuẩn hóa dữ liệu để phù hợp với đầu vào của mô hình học sâu. 
+Dữ liệu định tính (Qualitative Data): 
+Thu thập tin tức liên quan đến thị trường và doanh nghiệp. 
+Sử dụng LLM để phân tích nội dung và gán điểm cảm xúc trong khoảng [-1, 1]. 
+Áp dụng cơ chế suy giảm theo thời gian (Time Decay) nhằm giảm trọng số của các tin tức cũ. 
+3.3. Xây dựng mô hình lai
+Sử dụng mô hình học sâu để dự báo kỳ vọng lợi nhuận và độ biến động. 
+Kết hợp với tín hiệu sentiment thông qua các hệ số điều chỉnh nhằm phản ánh tác động của tin tức lên thị trường. 
+Áp dụng phân phối chuẩn (Gaussian Distribution) để mô hình hóa độ bất định và tính toán xác suất sinh lời. 
+3.4. Đánh giá và kiểm chứng mô hình
+Sử dụng các chỉ số sai số như MAE, RMSE, MAPE để đánh giá độ chính xác dự báo. 
+Đánh giá hiệu quả tín hiệu giao dịch thông qua các chỉ số như Accuracy và Win-rate. 
+So sánh kết quả giữa các mô hình để xác định mô hình tối ưu. 
+4. Ý nghĩa khoa học và thực tiễn của đề tài
+Ý nghĩa khoa học: Đề tài góp phần làm rõ hiệu quả của việc kết hợp giữa mô hình học sâu và phân tích cảm xúc trong dự báo tài chính, đồng thời mở rộng hướng nghiên cứu về mô hình lai trong lĩnh vực này. 
+Ý nghĩa thực tiễn: Hệ thống có thể được ứng dụng như một công cụ hỗ trợ nhà đầu tư trong việc ra quyết định giao dịch, giúp giảm thiểu rủi ro và nâng cao hiệu quả đầu tư trong thị trường chứng khoán Việt Nam.
+ 
+TỔNG QUAN ĐỀ TÀI
+Phát biểu bài toán
+Thị trường chứng khoán được xem là một trong những hệ thống tài chính có độ phức tạp cao, nơi mà giá tài sản biến động liên tục theo thời gian dưới tác động tổng hợp của nhiều yếu tố khác nhau. Các yếu tố này bao gồm: tình hình hoạt động sản xuất – kinh doanh của doanh nghiệp, các chỉ số kinh tế vĩ mô như tăng trưởng GDP, lạm phát, lãi suất, tỷ giá hối đoái, cũng như các chính sách điều hành của Nhà nước. Bên cạnh đó, yếu tố tâm lý nhà đầu tư, kỳ vọng thị trường và dòng chảy thông tin từ truyền thông cũng đóng vai trò quan trọng trong việc hình thành xu hướng giá cổ phiếu.
+Đặc trưng nổi bật của dữ liệu tài chính là tính phi tuyến (non-linearity), nhiễu cao (high noise) và phụ thuộc theo thời gian (temporal dependency). Điều này khiến cho việc mô hình hóa và dự báo giá cổ phiếu trở thành một bài toán khó, đòi hỏi các phương pháp phân tích có khả năng học được các mối quan hệ phức tạp và thích nghi với sự thay đổi liên tục của thị trường. Các phương pháp truyền thống như hồi quy tuyến tính hoặc các mô hình thống kê cổ điển thường gặp hạn chế trong việc nắm bắt các đặc trưng này, đặc biệt khi dữ liệu có tính phi tuyến và chịu ảnh hưởng của nhiều yếu tố ngoại sinh.
+Trong thực tiễn, bài toán dự báo giá cổ phiếu có ý nghĩa kinh tế quan trọng. Đối với nhà đầu tư cá nhân, việc dự đoán xu hướng giá giúp đưa ra quyết định mua – bán hợp lý, tối ưu hóa lợi nhuận và kiểm soát rủi ro. Đối với các tổ chức tài chính, kết quả dự báo đóng vai trò hỗ trợ trong việc xây dựng chiến lược đầu tư, quản lý danh mục và đánh giá mức độ ổn định của thị trường. Ngoài ra, việc hiểu rõ động lực biến động giá còn giúp nâng cao tính minh bạch và hiệu quả của thị trường chứng khoán.
+Tại Việt Nam, Vingroup là một trong những tập đoàn kinh tế tư nhân lớn nhất với hệ sinh thái hoạt động đa ngành, trải dài từ bất động sản, bán lẻ, công nghệ đến công nghiệp. Cổ phiếu VIC thuộc nhóm cổ phiếu vốn hóa lớn (blue-chip), có tỷ trọng đáng kể trong chỉ số VN-Index và ảnh hưởng mạnh đến dòng vốn trên thị trường. Do đó, biến động giá của cổ phiếu VIC không chỉ phản ánh hiệu quả hoạt động của riêng doanh nghiệp mà còn có thể được xem như một chỉ báo quan trọng cho xu hướng chung của thị trường chứng khoán Việt Nam.
+Trong những năm gần đây, sự phát triển mạnh mẽ của trí tuệ nhân tạo, đặc biệt là học sâu (Deep Learning), đã mở ra những hướng tiếp cận mới cho bài toán dự báo tài chính. Các mô hình như Long Short-Term Memory (LSTM) được thiết kế chuyên biệt cho dữ liệu chuỗi thời gian, có khả năng ghi nhớ các phụ thuộc dài hạn và học được các mối quan hệ phi tuyến trong dữ liệu. Nhờ đó, LSTM đã được ứng dụng rộng rãi trong dự báo giá cổ phiếu và cho thấy nhiều kết quả khả quan so với các phương pháp truyền thống.
+Tuy nhiên, một hạn chế quan trọng của các mô hình dựa hoàn toàn vào dữ liệu lịch sử là chưa thể phản ánh kịp thời các tác động từ thông tin bên ngoài, đặc biệt là tin tức thị trường. Trong thực tế, các sự kiện như công bố kết quả kinh doanh, thay đổi chính sách, hay các thông tin liên quan đến doanh nghiệp có thể gây ra những biến động mạnh trong ngắn hạn mà dữ liệu quá khứ không thể dự đoán trước. Điều này cho thấy nhu cầu cần thiết phải tích hợp thêm các nguồn dữ liệu định tính vào mô hình dự báo.
+Sự xuất hiện của các mô hình ngôn ngữ lớn (Large Language Models – LLM) đã cung cấp công cụ hiệu quả để xử lý và phân tích dữ liệu văn bản. Thông qua các kỹ thuật phân tích cảm xúc (sentiment analysis), nội dung tin tức có thể được lượng hóa thành các chỉ số số học, phản ánh mức độ tích cực hoặc tiêu cực của thông tin. Việc kết hợp dữ liệu định tính này với dữ liệu định lượng truyền thống tạo nên một hướng tiếp cận mới, cho phép xây dựng các mô hình lai (Hybrid Models) có khả năng phản ánh toàn diện hơn các yếu tố ảnh hưởng đến giá cổ phiếu.
+Từ những phân tích trên, bài toán đặt ra trong đề tài này là: Xây dựng một hệ thống dự báo biến động giá cổ phiếu VIC trong ngắn hạn dựa trên mô hình học sâu LSTM, đồng thời tích hợp thông tin từ tin tức thị trường thông qua phân tích cảm xúc, nhằm nâng cao độ chính xác dự báo và hỗ trợ hiệu quả cho quá trình ra quyết định đầu tư.
+Bên cạnh đó, hệ thống không chỉ dừng lại ở việc dự báo giá mà còn hướng đến việc cung cấp các chỉ số hỗ trợ quyết định như xác suất sinh lời, mức độ rủi ro và tín hiệu giao dịch (mua – bán – giữ). Điều này giúp chuyển đổi bài toán từ dự báo thuần túy sang một hệ thống hỗ trợ ra quyết định đầu tư thông minh, có tính ứng dụng thực tiễn cao.
+Đối tượng và phạm vi nghiên cứu
+Đối tượng nghiên cứu
+Đối tượng nghiên cứu của đề tài bao gồm hai thành phần chính: dữ liệu đầu vào và các mô hình trí tuệ nhân tạo phục vụ cho bài toán dự báo:
+Dữ liệu lịch sử giá cổ phiếu Vingroup (mã VIC), bao gồm các thông tin:
+	Ngày giao dịch
+	Giá mở cửa (Open)
+	Giá cao nhất (High)
+	Giá thấp nhất (Low)
+	Giá đóng cửa (Close)
+	Khối lượng giao dịch (Volume)
+Đây là tập dữ liệu chuỗi thời gian phản ánh đầy đủ diễn biến của thị trường, đóng vai trò là nguồn thông tin định lượng cốt lõi cho các mô hình dự báo.
+Bên cạnh đó, đề tài còn sử dụng dữ liệu tin tức tài chính được thu thập từ các nguồn thông tin chính thống. Các dữ liệu này mang tính chất định tính, phản ánh tâm lý thị trường và kỳ vọng của nhà đầu tư. Thông qua các kỹ thuật xử lý ngôn ngữ tự nhiên, nội dung tin tức được lượng hóa thành các chỉ số cảm xúc (sentiment) và mức độ tác động (impact), từ đó tích hợp vào mô hình dự báo.
+Thứ hai, đối tượng nghiên cứu bao gồm các mô hình trí tuệ nhân tạo và học máy được sử dụng để giải quyết bài toán dự báo chuỗi thời gian tài chính. Trong đó, mô hình học sâu đóng vai trò trung tâm, kết hợp với các mô hình học máy truyền thống nhằm mục đích so sánh và đánh giá hiệu quả.
+Phạm vi nghiên cứu
+Không gian nghiên cứu: thị trường chứng khoán Việt Nam, tập trung vào cổ phiếu VinGroup. Việc lựa chọn một mã cổ phiếu đại diện giúp đảm bảo tính tập trung và khả năng phân tích chuyên sâu.
+Thời gian nghiên cứu: Sử dụng dữ liệu lịch sử trong giai đoạn từ năm 2015 đến năm 2026, đảm bảo đủ dài để phản ánh các chu kỳ tăng trưởng, suy giảm và biến động của thị trường.
+Phạm vi kỹ thuật: Nghiên cứu và triển khai mô hình học sâu LSTM cùng các kỹ thuật tiền xử lý dữ liệu và hậu xử lý dự báo bằng AI.
+Phạm vi đánh giá: Sử dụng các chỉ số RMSE, MAE để đo lường sai số và Accuracy để đánh giá độ chính xác của tín hiệu xu hướng.
+Kết quả mong muốn đạt được của đề tài
+Xây dựng một hệ thống Dashboard thông minh có khả năng dự báo xu hướng cổ phiếu VIC, đồng thời cung cấp các phân tích từ "Trợ lý ảo AI" để giải thích biến động và hỗ trợ quyết định đầu tư một cách trực quan.
+Ý nghĩa
+Ý nghĩa khoa học
+Góp phần bổ sung các nghiên cứu về ứng dụng trí tuệ nhân tạo và học sâu trong lĩnh vực dự báo tài chính tại Việt Nam.
+Kiểm nghiệm hiệu quả của các mô hình học sâu, đặc biệt là LSTM, trên dữ liệu chứng khoán thực tế – một dạng dữ liệu có tính phi tuyến và nhiễu cao.
+Làm cơ sở tham khảo cho các nghiên cứu tiếp theo về dự báo chuỗi thời gian tài chính.
+Ý nghĩa thực tiễn
+Hỗ trợ nhà đầu tư cá nhân và tổ chức trong việc phân tích xu hướng và ra quyết định đầu tư.
+Cung cấp công cụ tham khảo trong dự báo biến động giá cổ phiếu.
+Góp phần định hướng phát triển các hệ thống hỗ trợ giao dịch thông minh dựa trên trí tuệ nhân tạo.
+ 
+Thu thập và chuẩn bị dữ liệu
+Dữ liệu giá cổ phiếu VIC được thu thập thông qua thư viện Vnstock (phiên bản 3.x), một thư viện mã nguồn mở phổ biến trong cộng đồng nhà đầu tư Việt Nam. Thư viện này cung cấp API để truy xuất dữ liệu từ các nguồn uy tín như VCI Securities, đảm bảo tính chính xác và cập nhật của dữ liệu.
+Sau khi thu thập, dữ liệu được tiến hành làm sạch, xử lý các giá trị thiếu và chuẩn hóa nhằm phù hợp với yêu cầu đầu vào của mô hình học sâu. Đồng thời, các chỉ báo kỹ thuật như RSI, MACD, MA20 và độ biến động (volatility) được tính toán để làm giàu tập dữ liệu đầu vào.
+Đối với dữ liệu tin tức, hệ thống tiến hành thu thập và xử lý nội dung văn bản, sau đó sử dụng các mô hình ngôn ngữ lớn để phân tích và chuyển đổi thành các chỉ số cảm xúc phục vụ cho quá trình dự báo.
+Giới thiệu chung về các công nghệ và công cụ sử dụng
+Ngôn ngữ lập trình Python
+Python là ngôn ngữ lập trình chủ đạo trong đề tài, được sử dụng để xây dựng toàn bộ các thành phần liên quan đến trí tuệ nhân tạo và xử lý dữ liệu. Python nổi bật với cú pháp đơn giản, dễ đọc và có hệ sinh thái thư viện phong phú, đặc biệt trong lĩnh vực khoa học dữ liệu và học máy.
+Trong đề tài này, Python được sử dụng để:
+Xây dựng và huấn luyện mô hình LSTM.
+Tiền xử lý dữ liệu tài chính (OHLCV).
+Tính toán các chỉ báo kỹ thuật như RSI, MACD, MA20.
+Tích hợp các mô hình phân tích cảm xúc từ tin tức.
+Việc lựa chọn Python giúp giảm độ phức tạp trong triển khai, đồng thời tăng khả năng mở rộng và tích hợp hệ thống.
+ 
+Hình 1.1. Python
+Framework học sâu PyTorch / TensorFlow
+ 
+Hình 1.2. Pytorch
+ 
+Hình 1.3. TensorFlow
+PyTorch và TensorFlow là hai framework học sâu mã nguồn mở phổ biến nhất hiện nay, được sử dụng để xây dựng và huấn luyện các mô hình trí tuệ nhân tạo.
+Trong đề tài:
+PyTorch được ưu tiên sử dụng nhờ tính linh hoạt và dễ debug.
+TensorFlow có thể được sử dụng như một lựa chọn thay thế.
+Vai trò chính:
+Xây dựng kiến trúc mạng LSTM.
+Huấn luyện mô hình trên dữ liệu chuỗi thời gian.
+Tối ưu hóa trọng số thông qua thuật toán lan truyền ngược (Backpropagation).
+Các framework này cho phép mô hình học được các mối quan hệ phi tuyến và phụ thuộc dài hạn trong dữ liệu tài chính.
+
+LangChain và Large Language Models (LLM)
+ 
+Hình 1.4. LangChain & LLM
+LangChain là một framework hỗ trợ xây dựng các ứng dụng sử dụng mô hình ngôn ngữ lớn (Large Language Models – LLM) bằng cách kết nối mô hình với các nguồn dữ liệu bên ngoài, công cụ xử lý và logic ứng dụng. Trong đề tài này, LangChain đóng vai trò trung gian giúp tích hợp các mô hình AI vào hệ thống một cách linh hoạt và có cấu trúc.
+Hệ thống sử dụng kết hợp các mô hình ngôn ngữ lớn, trong đó nổi bật là Qwen2.5 (phiên bản 7B), một mô hình LLM mã nguồn mở có hiệu năng cao, được tối ưu cho các tác vụ xử lý ngôn ngữ tự nhiên.
+ 
+Hình 1.5. Large Language Models
+
+Các mô hình LLM được sử dụng để thực hiện các nhiệm vụ sau:
+Phân tích cảm xúc (Sentiment Analysis): Phân tích nội dung tin tức tài chính và gán điểm cảm xúc trong khoảng [-1, 1], phản ánh mức độ tích cực hoặc tiêu cực của thông tin.
+Đánh giá mức độ tác động (Impact Score): Xác định mức độ ảnh hưởng của từng bản tin đến giá cổ phiếu dựa trên nội dung và ngữ cảnh.
+Sinh giải thích (Explainability): Tạo ra các đoạn mô tả bằng ngôn ngữ tự nhiên để giải thích lý do tại sao hệ thống đưa ra dự báo hoặc tín hiệu giao dịch.
+Trợ lý AI (AI Assistant): Hỗ trợ người dùng tương tác với hệ thống, đưa ra các khuyến nghị đầu tư và phân tích thị trường.
+Mô hình Qwen2.5 (7B) được lựa chọn vì các lý do sau:
+Là mô hình mã nguồn mở → có thể triển khai cục bộ (local), đảm bảo bảo mật dữ liệu.
+Có khả năng xử lý tiếng Anh tốt và có thể thích nghi với ngữ cảnh tài chính.
+Hiệu năng tốt trong các tác vụ: phân tích văn bản, tóm tắt nội dung, suy luận ngữ cảnh
+Chi phí vận hành thấp hơn so với các API thương mại.
+Trong hệ thống, Qwen2.5:7B được sử dụng làm mô hình chính cho module phân tích tin tức và trợ lý AI, kết hợp với LangChain để quản lý luồng xử lý dữ liệu và xây dựng pipeline phân tích.
+Pandas và Scikit-learn
+Pandas và Scikit-learn là hai thư viện quan trọng trong xử lý dữ liệu và đánh giá mô hình. Trong đề tài:
+Pandas được sử dụng để:
+Xử lý dữ liệu bảng (DataFrame)
+Làm sạch dữ liệu
+Tính toán các chỉ số kỹ thuật
+Scikit-learn được sử dụng để:
+Chuẩn hóa dữ liệu (Normalization, Scaling)
+Xây dựng các mô hình baseline (Linear Regression)
+Tính toán các chỉ số đánh giá như RMSE, MAE
+Next.js & React
+Nền tảng phát triển phía giao diện (Frontend) hiện đại nhất, cho phép xây dựng các trang DashBoard có tốc độ tải nhanh, chuẩn SEO và trải nghiệm người dùng mượt mà. Trong dự án, Next.js giúp hiển thị các biểu đồ biến động giá và các tín hiệu dự báo từ AI theo thời gian thực.
+ 
+Hình 1.6. NextJS & ReactJS
+FastAPI / Node.js
+Hệ thống backend được triển khai theo mô hình microservices, sử dụng FastAPI và Node.js.
+FastAPI (Python):
+Xử lý các tác vụ AI
+Thực hiện inference mô hình LSTM
+Phân tích sentiment
+Node.js (Express):
+Làm API Gateway
+Quản lý dữ liệu người dùng
+Kết nối Frontend với AI Service
+ 
+Hình 1.7. FastAPI
+Ưu điểm:
+Tốc độ cao
+Hỗ trợ xử lý bất đồng bộ (asynchronous)
+Dễ mở rộng 
+TailwindCSS & Shadcn/UI
+Đây là các công cụ hỗ trợ thiết kế giao diện người dùng.
+TailwindCSS: 
+Framework CSS utility-first 
+Giúp xây dựng giao diện nhanh chóng 
+Shadcn/UI: 
+Thư viện component hiện đại 
+Tối ưu trải nghiệm người dùng 
+Vai trò:
+Tạo giao diện chuyên nghiệp 
+Responsive trên nhiều thiết bị 
+Tăng tính trực quan của hệ thống
+
+Antigravity
+ 
+Hình 1.8. Antigravity
+Trong quá trình phát triển hệ thống, đề tài sử dụng Antigravity như một môi trường phát triển tích hợp (Integrated Development Environment – IDE) để xây dựng và quản lý toàn bộ mã nguồn của hệ thống.
+Antigravity là một công cụ hỗ trợ lập trình hiện đại, cung cấp các tính năng giúp tăng năng suất phát triển phần mềm và cải thiện chất lượng mã nguồn. Công cụ này hỗ trợ lập trình đa ngôn ngữ, đặc biệt phù hợp với các dự án kết hợp nhiều công nghệ như Python (AI Service), JavaScript/TypeScript (Frontend, Backend).
+Trong phạm vi hệ thống, Antigravity được sử dụng để:
+Phát triển mã nguồn Backend và AI Service: Hỗ trợ viết, chỉnh sửa và tổ chức code Python cho các mô hình học sâu và API FastAPI.
+Phát triển Frontend: Hỗ trợ lập trình React/Next.js, quản lý cấu trúc project và tích hợp các thư viện giao diện.
+Debug và kiểm soát lỗi: Cung cấp các công cụ phát hiện lỗi cú pháp, lỗi runtime và hỗ trợ debug trực tiếp trong quá trình phát triển.
+Quản lý phiên bản (Version Control): Tích hợp với Git, giúp theo dõi thay đổi mã nguồn và hỗ trợ làm việc nhóm.
+Hỗ trợ lập trình thông minh (AI-assisted coding): Tùy theo cấu hình, Antigravity có thể hỗ trợ gợi ý code, tự động hoàn thành và tối ưu hóa đoạn mã.
+Thư viện Vnstock 
+Vnstock là thư viện Python mã nguồn mở cung cấp API truy cập dữ liệu chứng khoán Việt Nam.
+ 
+Hình 1.9. Vnstock
+Trong đề tài:
+Thu thập dữ liệu OHLCV của cổ phiếu VIC
+Cập nhật dữ liệu tự động từ HOSE
+Đảm bảo dữ liệu chính xác và nhất quán 
+Kết luận chương 1
+Chương này đã trình bày tổng quan về bài toán dự báo biến động giá cổ phiếu với các đặc điểm phức tạp của dữ liệu tài chính như phi tuyến, nhiễu cao và phụ thuộc theo thời gian. Đề tài đã xác định rõ đối tượng nghiên cứu là cổ phiếu VIC cùng với các nguồn dữ liệu định lượng và định tính, đồng thời làm rõ phạm vi và mục tiêu nghiên cứu. Bên cạnh đó, ý nghĩa khoa học và thực tiễn của đề tài cũng được nêu bật, cho thấy tiềm năng ứng dụng trong hỗ trợ ra quyết định đầu tư. Ngoài ra, chương này đã giới thiệu các công nghệ và công cụ chính được sử dụng để xây dựng hệ thống, làm nền tảng cho việc triển khai mô hình. Những nội dung này là cơ sở để phát triển phương pháp và mô hình dự báo được trình bày trong các chương tiếp theo.
+ 
+PHƯƠNG PHÁP NGHIÊN CỨU VÀ CƠ SỞ LÝ THUYẾT
+Khái quát về bài toán dự báo biến động giá cổ phiếu
+Bản chất phức tạp của hệ thống tài chính và chuỗi thời gian
+Bài toán dự báo biến động giá cổ phiếu, đặc biệt đối với các mã cổ phiếu có vốn hóa lớn như Vingroup (VIC), không chỉ đơn thuần là một bài toán ngoại suy dữ liệu (Data Extrapolation), mà về bản chất là quá trình mô hình hóa một hệ thống động lực học phi tuyến (Non-linear Dynamic System). Trong hệ thống này, giá cổ phiếu không tuân theo một quy luật cố định mà biến động dưới tác động đồng thời của nhiều yếu tố kinh tế, tài chính và tâm lý.
+Trong lĩnh vực khoa học dữ liệu, chuỗi thời gian tài chính được xem là một trong những loại dữ liệu phức tạp nhất do sự tồn tại song song của hai thành phần chính: các yếu tố có tính quy luật (deterministic patterns) và các yếu tố ngẫu nhiên (stochastic noise).
+Sự đan xen giữa hai thành phần này khiến cho việc dự báo trở nên khó khăn, bởi mô hình cần vừa phát hiện được quy luật tiềm ẩn, vừa phải có khả năng chống nhiễu và thích nghi với các biến động bất thường.
+Giá cổ phiếu VIC tại một thời điểm bất kỳ là kết quả tổng hợp của nhiều lớp thông tin khác nhau. Ở cấp độ vi mô, giá chịu ảnh hưởng từ hoạt động kinh doanh của doanh nghiệp như doanh thu, lợi nhuận, chiến lược phát triển (ví dụ: chuyển hướng sang lĩnh vực công nghệ và xe điện). Ở cấp độ vĩ mô, các yếu tố như lạm phát (CPI), lãi suất, tỷ giá và chính sách tiền tệ đóng vai trò điều tiết dòng vốn trên thị trường. Ngoài ra, yếu tố tâm lý nhà đầu tư và dòng thông tin từ truyền thông có thể gây ra những biến động mạnh trong ngắn hạn.
+Một đặc điểm quan trọng của chuỗi thời gian tài chính là tính phụ thuộc theo thời gian (Serial Dependency), tức là giá trị hiện tại có liên hệ với các giá trị trong quá khứ. Tuy nhiên, mối quan hệ này không hoàn toàn ổn định mà thường xuyên bị gián đoạn bởi các cú sốc ngoại sinh (Exogenous Shocks), chẳng hạn như tin tức bất ngờ, thay đổi chính sách hoặc các sự kiện kinh tế lớn. Những cú sốc này có thể làm thay đổi cấu trúc của chuỗi dữ liệu trong thời gian ngắn, gây khó khăn cho các mô hình dự báo truyền thống.
+Bên cạnh đó, dữ liệu chứng khoán còn mang đặc tính không dừng (Non-stationary). Điều này có nghĩa là các thống kê cơ bản của chuỗi như giá trị trung bình (mean) và phương sai (variance) không cố định theo thời gian mà thay đổi theo từng giai đoạn thị trường. Ví dụ, trong giai đoạn tăng trưởng mạnh, giá cổ phiếu có thể có xu hướng tăng với độ biến động thấp, trong khi ở giai đoạn khủng hoảng, độ biến động tăng cao và xu hướng trở nên khó đoán hơn. Tính không dừng này khiến các mô hình thống kê cổ điển gặp hạn chế, vì chúng thường giả định dữ liệu có phân phối ổn định.
+Ngoài ra, chuỗi thời gian tài chính còn thể hiện tính phi tuyến (Non-linearity), nghĩa là mối quan hệ giữa các biến không thể biểu diễn bằng các hàm tuyến tính đơn giản. Các yếu tố như tâm lý thị trường hay phản ứng dây chuyền giữa các nhà đầu tư có thể tạo ra các hiệu ứng khuếch đại (amplification effects), làm cho biến động giá trở nên phức tạp và khó dự đoán.
+Từ những đặc điểm trên, có thể thấy rằng bài toán dự báo giá cổ phiếu VIC đòi hỏi một phương pháp tiếp cận có khả năng:
+Học được các phụ thuộc dài hạn trong dữ liệu chuỗi thời gian
+Mô hình hóa các mối quan hệ phi tuyến phức tạp
+Thích nghi với tính không dừng của dữ liệu
+Kết hợp được cả thông tin định lượng (giá, khối lượng) và định tính (tin tức, sentiment)
+Các thách thức trong dự báo tài chính
+Dự báo giá cổ phiếu là một trong những bài toán khó nhất trong lĩnh vực khoa học dữ liệu và tài chính định lượng, do tồn tại nhiều thách thức cả về mặt dữ liệu lẫn mô hình. Trong đề tài này, các thách thức chính có thể được phân tích như sau:
+Nhiễu dữ liệu (Noise)
+Dữ liệu tài chính chứa một lượng lớn nhiễu ngẫu nhiên, xuất phát từ:
+Giao dịch ngắn hạn
+Hành vi đầu cơ
+Biến động không có quy luật rõ ràng
+Điều này khiến tín hiệu thực bị “che lấp”, làm giảm khả năng học của mô hình. Nếu không xử lý tốt, mô hình dễ học nhầm nhiễu thay vì học quy luật.
+Overfitting (Quá khớp)
+Do dữ liệu tài chính có tính phức tạp cao, các mô hình học sâu rất dễ rơi vào tình trạng overfitting, tức là: Học rất tốt trên dữ liệu huấn luyện nhưng dự đoán kém trên dữ liệu thực tế
+Nguyên nhân:
+Dữ liệu không đủ lớn
+Mô hình quá phức tạp
+Thị trường thay đổi liên tục
+Tính trễ của chỉ báo kỹ thuật (Lagging Indicators)
+Các chỉ báo như: MA (Moving Average), RSI, MACD đều được tính từ dữ liệu quá khứ → nên có độ trễ.
+Hệ quả: phản ứng chậm với biến động mới dễ “miss” các cú đảo chiều
+Data Leakage (Rò rỉ dữ liệu)
+Đây là lỗi nghiêm trọng trong mô hình dự báo, xảy ra khi: mô hình “vô tình” sử dụng thông tin tương lai trong quá trình huấn luyện
+Ví dụ: dùng dữ liệu T+1 để dự đoán T
+Kết quả: Accuracy rất cao nhưng không dùng được ngoài thực tế
+Tính không dừng (Non-stationarity)
+Như đã phân tích ở mục 2.1.1, dữ liệu tài chính không ổn định theo thời gian: Xu hướng thay đổi độ biến động thay đổi.
+Mô hình phải có khả năng: Thích nghi và cập nhật liên tục
+Ảnh hưởng của thông tin bên ngoài (Exogenous Factors)
+Các yếu tố như: tin tức doanh nghiệp, chính sách vĩ mô, sự kiện bất ngờ có thể gây biến động mạnh nhưng không tồn tại trong dữ liệu giá
+=> Đây là lý do cần tích hợp LLM và sentiment analysis.
+Hạn chế của các phương pháp truyền thống
+Trong các nghiên cứu trước đây, nhiều phương pháp thống kê truyền thống đã được sử dụng cho bài toán dự báo giá cổ phiếu, tiêu biểu như Linear Regression hay ARIMA. Tuy nhiên, các phương pháp này tồn tại nhiều hạn chế khi áp dụng vào dữ liệu chứng khoán thực tế.
+Trước hết, hầu hết các mô hình truyền thống đều giả định mối quan hệ tuyến tính giữa các biến đầu vào và đầu ra. Trong khi đó, dữ liệu giá cổ phiếu lại mang tính phi tuyến cao và biến động phức tạp, khiến các mô hình tuyến tính khó nắm bắt được các quy luật tiềm ẩn trong dữ liệu.
+Thứ hai, các mô hình thống kê như ARIMA thường yêu cầu dữ liệu có tính dừng, do đó cần thực hiện nhiều bước tiền xử lý như sai phân để làm ổn định chuỗi dữ liệu. Quá trình này có thể làm mất đi một phần thông tin quan trọng, ảnh hưởng đến độ chính xác của dự báo.
+Bên cạnh đó, các phương pháp truyền thống không có khả năng ghi nhớ mối quan hệ dài hạn trong chuỗi thời gian. Khi độ dài dữ liệu tăng lên, hiệu quả dự báo của các mô hình này thường giảm đáng kể, đặc biệt trong bối cảnh thị trường biến động mạnh và liên tục thay đổi như thị trường chứng khoán hiện nay.
+Do những hạn chế trên, các phương pháp truyền thống ngày càng bộc lộ sự kém hiệu quả trong môi trường tài chính hiện đại. Điều này đặt ra nhu cầu áp dụng các phương pháp học máy và học sâu, vốn có khả năng xử lý dữ liệu phi tuyến, nhiễu cao và học được các mối quan hệ phức tạp trong dữ liệu chuỗi thời gian, nhằm nâng cao độ chính xác của bài toán dự báo giá cổ phiếu.
+Học máy và học sâu trong dự báo tài chính
+Trong bối cảnh dữ liệu tài chính ngày càng lớn, phức tạp và biến động mạnh, các phương pháp truyền thống dần bộc lộ nhiều hạn chế. Sự phát triển của Học máy (Machine Learning) và Học sâu (Deep Learning) đã mở ra những hướng tiếp cận mới, cho phép khai thác hiệu quả dữ liệu lịch sử và mô hình hóa các mối quan hệ phi tuyến phức tạp trong thị trường tài chính. Đây được xem là nền tảng quan trọng cho các hệ thống dự báo giá cổ phiếu hiện đại.
+Học máy (Machine Learning)
+ 
+Hình 2.1. Học máy (Machine Learning)
+Học máy là một nhánh của trí tuệ nhân tạo, cho phép máy tính tự động học từ dữ liệu và cải thiện hiệu suất theo thời gian mà không cần lập trình cứng các quy tắc cụ thể. Thay vì xây dựng các công thức cố định, mô hình học máy tìm kiếm các mẫu (patterns) và mối quan hệ tiềm ẩn trong dữ liệu để đưa ra dự đoán.
+Trong lĩnh vực tài chính, học máy được ứng dụng rộng rãi nhờ khả năng:
+Xử lý dữ liệu lớn và đa chiều.
+Học được các mối quan hệ phi tuyến giữa các biến.
+Thích nghi tốt hơn với sự thay đổi của thị trường so với các mô hình thống kê truyền thống.
+Một số mô hình học máy phổ biến trong dự báo tài chính bao gồm:
+Support Vector Machine (SVM): Là mô hình học có giám sát, hoạt động dựa trên việc tìm siêu phẳng tối ưu để phân tách dữ liệu. Trong dự báo giá cổ phiếu, SVM có khả năng xử lý dữ liệu phi tuyến thông qua các hàm kernel và thường cho kết quả tốt khi số lượng đặc trưng không quá lớn.
+Random Forest: Là mô hình học tập theo nhóm (ensemble learning), kết hợp nhiều cây quyết định để cải thiện độ chính xác và giảm hiện tượng overfitting. Random Forest đặc biệt hiệu quả trong việc xử lý dữ liệu có nhiễu và đánh giá tầm quan trọng của các đặc trưng đầu vào.
+XGBoost: Là một thuật toán boosting tiên tiến, nổi bật với tốc độ huấn luyện nhanh và khả năng tối ưu hóa cao. XGBoost thường đạt hiệu suất rất tốt trong các bài toán dự báo và xếp hạng trong lĩnh vực tài chính.
+Nhìn chung, các mô hình học máy có hiệu quả cao hơn so với các phương pháp thống kê truyền thống, tuy nhiên chúng vẫn gặp hạn chế trong việc khai thác mối quan hệ dài hạn theo thời gian, đặc biệt với dữ liệu chuỗi thời gian dài như giá cổ phiếu nhiều năm.
+Học sâu (Deep Learning)
+Khái niệm
+Học sâu là một lĩnh vực chuyên sâu của trí tuệ nhân tạo, sử dụng các mạng nơ-ron nhân tạo nhiều lớp để mô phỏng quá trình học tập của con người. Khác với học máy truyền thống, học sâu có khả năng tự động trích xuất đặc trưng từ dữ liệu thô, giúp giảm đáng kể sự phụ thuộc vào quá trình thiết kế đặc trưng thủ công.
+Ở mức độ cơ bản, học sâu cho phép máy tính học từ dữ liệu, xây dựng các biểu diễn trừu tượng và đưa ra dự đoán hoặc quyết định dựa trên những biểu diễn đó. Nhờ khả năng biểu diễn mạnh mẽ, học sâu đã đạt được nhiều thành tựu nổi bật trong các lĩnh vực như nhận dạng giọng nói, xử lý ngôn ngữ tự nhiên, nhận dạng hình ảnh và đặc biệt là dự báo chuỗi thời gian tài chính.
+ 
+Hình 2.2. Học sâu (Deep Learning)
+Mô hình Học sâu
+Mô hình Học sâu đơn giản nhất là sử dụng một mạng nơ-ron nhân tạo với một lớp đầu vào, một lớp ẩn và một lớp đầu ra. Lớp đầu ra tính toán giá trị dự đoán dựa trên các giá trị đầu vào và trọng số tương ứng. Điều này cho phép ta biểu diễn quan hệ giữa các biến đầu vào và giá trị đầu ra dưới dạng một tổ hợp có trọng số của các yếu tố cụ thể.
+Với Học sâu, ta có thể tạo ra các mô hình phức tạp hơn bằng cách thêm các lớp ẩn vào mạng nơ-ron. Việc này cho phép ta xây dựng các mô hình hiệu quả hơn để dự đoán giá trị dựa trên các biến quan trọng. Với mô hình phức tạp hơn, ta có khả năng biểu diễn quan hệ giữa các biến đầu vào và giá trị đầu ra một cách linh hoạt hơn.
+Các mô hình học sâu tiêu biểu trong dự báo tài chính
+Trong bài toán dự báo chuỗi thời gian tài chính, một số kiến trúc học sâu được sử dụng phổ biến bao gồm:
+Multilayer Perceptron (MLP): Là mô hình nơ-ron truyền thẳng, có khả năng học các quan hệ phi tuyến giữa các biến. Tuy nhiên, MLP không phù hợp với dữ liệu chuỗi thời gian do không có cơ chế ghi nhớ theo thời gian.
+Recurrent Neural Network (RNN): Là mô hình được thiết kế để xử lý dữ liệu chuỗi, trong đó trạng thái tại thời điểm hiện tại phụ thuộc vào các trạng thái trước đó. RNN có khả năng nắm bắt phụ thuộc theo thời gian nhưng gặp hạn chế về hiện tượng mất mát gradient khi chuỗi dữ liệu dài.
+	Convolutional Neural Network (CNN): Mặc dù thường được sử dụng trong xử lý ảnh, CNN cũng được áp dụng trong tài chính để trích xuất đặc trưng và phát hiện các mẫu biến động trong dữ liệu chuỗi. CNN có khả năng giảm nhiễu và làm nổi bật các tín hiệu quan trọng.
+	Long Short-Term Memory (LSTM): Là một biến thể cải tiến của RNN, được thiết kế để giải quyết vấn đề mất mát gradient. LSTM sử dụng cơ chế bộ nhớ (cell state) và các cổng điều khiển (gate) để lưu giữ thông tin quan trọng trong thời gian dài. Nhờ đó, LSTM đặc biệt hiệu quả trong việc học các xu hướng dài hạn và chu kỳ trong dữ liệu giá cổ phiếu.
+Ưu và nhược điểm của học sâu
+* Ưu điểm:
+Khả năng tạo ra các dự đoán chính xác với độ chính xác cao.
+Tự động học từ dữ liệu mà không cần phải chỉ định một cách rõ ràng các quy tắc.
+Khả năng biểu diễn quan hệ phức tạp giữa các biến đầu vào và giá trị đầu ra.
+* Nhược điểm:
+Đòi hỏi lượng dữ liệu lớn để huấn luyện mô hình.
+Cần có các tài nguyên tính toán mạnh mẽ để huấn luyện mô hình.
+Khó khăn trong việc giải thích quyết định của mô hình.
+Vai trò của học sâu trong dự báo giá cổ phiếu
+Từ các phân tích trên, có thể thấy học sâu đóng vai trò quan trọng trong việc nâng cao độ chính xác của các hệ thống dự báo tài chính như:
+Khai thác hiệu quả dữ liệu chuỗi thời gian
+Ghi nhớ các xu hướng dài hạn của thị trường
+Giảm ảnh hưởng của nhiễu và các biến động ngắn hạn
+Do đó, học sâu được xem là nền tảng cốt lõi trong việc xây dựng các mô hình dự báo giá cổ phiếu hiện đại, đặc biệt khi kết hợp với các nguồn dữ liệu đa dạng như dữ liệu kỹ thuật và dữ liệu tin tức.
+Tìm hiểu về thuật toán Linear Regression
+Giới thiệu về thuật toán
+Linear Regression (Hồi quy tuyến tính) là một trong những thuật toán cơ bản nhất trong học máy có giám sát (Supervised Learning), được sử dụng để mô hình hóa mối quan hệ giữa biến phụ thuộc và một hoặc nhiều biến độc lập thông qua một hàm tuyến tính.
+Về bản chất, Linear Regression tìm một hàm số tuyến tính sao cho sai số giữa giá trị dự đoán và giá trị thực tế là nhỏ nhất. Nói cách khác, mô hình cố gắng tìm ra một “đường thẳng tốt nhất” (best-fit line) biểu diễn xu hướng của dữ liệu.
+
+Dạng tổng quát của mô hình:
+ 
+Trong đó:
+xi: các biến đầu vào (giá cổ phiếu, chỉ báo kỹ thuật, …)
+wi: trọng số của từng biến
+b: hệ số chệch (bias)
+y: giá trị dự đoán
+Nguyên lý hoạt động
+Linear Regression hoạt động dựa trên nguyên tắc tối ưu hóa hàm mất mát, phổ biến nhất là phương pháp bình phương tối thiểu (Least Squares).
+Cụ thể, mô hình sẽ tìm các tham số w sao cho tổng bình phương sai số giữa giá trị dự đoán và giá trị thực tế là nhỏ nhất.
+Trong nhiều trường hợp, nghiệm của bài toán có thể được tìm bằng cách giải phương trình đạo hàm bằng 0, do tính chất tuyến tính của mô hình giúp việc tính toán trở nên đơn giản và khả thi.
+
+Ngoài ra, khi bài toán phức tạp hơn, các phương pháp tối ưu như Gradient Descent cũng được sử dụng để tìm nghiệm gần đúng.
+ 
+Hình 2.3. Linear Regression
+
+
+Linear Regression có một số đặc điểm quan trọng:
+Là mô hình tuyến tính theo tham số, tức là các hệ số xuất hiện dưới dạng bậc nhất
+Có thể mở rộng để xử lý nhiều biến đầu vào (Multiple Linear Regression)
+Có thể áp dụng cho cả dữ liệu tuyến tính và phi tuyến (thông qua biến đổi đặc trưng)
+Dễ dàng triển khai và có nghiệm đóng (closed-form solution) trong nhiều trường hợp
+Ưu, nhược điểm của thuật toán
+Ưu điểm
+	Đơn giản và dễ hiểu: Mô hình có cấu trúc rõ ràng, dễ diễn giải và phù hợp làm baseline.
+	Chi phí tính toán thấp: Có thể huấn luyện nhanh ngay cả với dữ liệu lớn.
+	Dễ triển khai và mở rộng: Có thể kết hợp với các kỹ thuật khác như Ridge Regression, Lasso.
+Khả năng giải thích cao: Các hệ số cho thấy mức độ ảnh hưởng của từng biến.
+Nhược điểm
+Mặc dù đơn giản và hiệu quả trong một số trường hợp, Linear Regression tồn tại nhiều hạn chế:
+Nhạy cảm với nhiễu (noise) và outlier: Chỉ một điểm dữ liệu bất thường cũng có thể làm sai lệch đáng kể kết quả mô hình.
+Không mô hình hóa được quan hệ phức tạp: Linear Regression không thể biểu diễn tốt các mối quan hệ phi tuyến trong dữ liệu thực tế.
+Không phù hợp với dữ liệu chuỗi thời gian: Mô hình không có cơ chế ghi nhớ hay xử lý phụ thuộc theo thời gian.
+Hiệu quả thấp trong dữ liệu tài chính: Do dữ liệu tài chính có nhiễu cao, phi tuyến và biến động mạnh.
+Ứng dụng trong dự báo tài chính
+Trong lĩnh vực tài chính, Linear Regression thường được sử dụng để:
+Phân tích xu hướng giá (trend analysis)
+Dự báo ngắn hạn dựa trên các biến đơn giản
+Xây dựng đường xu hướng (trendline) trong phân tích kỹ thuật
+Tuy nhiên, do đặc điểm của thị trường chứng khoán là phi tuyến, nhiều nhiễu và không dừng theo thời gian, Linear Regression chỉ phù hợp làm mô hình cơ sở (baseline model) để so sánh với các mô hình phức tạp hơn.
+Tìm hiểu thuật toán Random Forest
+Tổng quan về thuật toán
+Random Forest là một thuật toán học máy có giám sát (Supervised Learning), có thể áp dụng cho cả hai bài toán phân loại (Classification) và hồi quy (Regression). Thuật toán này được xây dựng dựa trên tư tưởng học tập theo nhóm (Ensemble Learning), trong đó nhiều mô hình học yếu được kết hợp lại để tạo thành một mô hình mạnh hơn, ổn định hơn và có khả năng tổng quát tốt hơn.
+Về bản chất, Random Forest là một tập hợp (forest) gồm nhiều cây quyết định (Decision Trees) được huấn luyện độc lập trên các tập con ngẫu nhiên khác nhau của dữ liệu huấn luyện. Mỗi cây trong rừng đưa ra một dự đoán riêng, sau đó các dự đoán này được tổng hợp lại để tạo ra kết quả cuối cùng.
+Đối với bài toán phân loại, kết quả cuối cùng được xác định dựa trên đa số phiếu bầu (majority voting).
+Đối với bài toán hồi quy, kết quả cuối cùng thường là giá trị trung bình của dự đoán từ tất cả các cây.
+Trong bài toán dự báo tài chính, Random Forest được đánh giá cao nhờ khả năng xử lý dữ liệu phi tuyến, dữ liệu có nhiễu và tập đặc trưng lớn – những đặc điểm thường gặp trong dữ liệu giá cổ phiếu. 
+ 
+Nguyên lý hoạt động
+Sơ đồ dưới đây giải thích hoạt động của thuật toán Random Forest:
+ 
+Hình 2.4. Sơ đồ hoạt động của thuật toán Random Forest
+Random Forest hoạt động trong hai giai đoạn đầu tiên là tạo ra khu Random Forest bằng cách kết hợp N cây quyết định, và thứ hai là đưa ra dự đoán cho mỗi cây được tạo ra trong giai đoạn đầu tiên. 
+Quá trình làm việc có thể được giải thích trong các bước và sơ đồ dưới đây: 
+	Bước 1: Lấy mẫu ngẫu nhiên từ tập huấn luyện (Bootstrap Sampling): Từ tập dữ liệu huấn luyện ban đầu, thuật toán chọn ngẫu nhiên K mẫu dữ liệu có hoàn lại để tạo thành một tập con huấn luyện cho mỗi cây quyết định. Quá trình này giúp tạo ra sự đa dạng giữa các cây trong rừng.
+	Bước 2: Xây dựng cây quyết định cho từng tập con: Mỗi cây quyết định được huấn luyện độc lập trên tập con dữ liệu đã chọn. Tại mỗi nút của cây, chỉ một tập con ngẫu nhiên các đặc trưng được xem xét để tìm điểm chia tối ưu. Điều này giúp giảm sự phụ thuộc giữa các cây và tăng tính ngẫu nhiên của mô hình.
+	Bước 3: Lặp lại quá trình xây dựng cây: Quá trình lấy mẫu và xây dựng cây được lặp lại N lần để tạo ra N cây quyết định trong rừng, trong đó N là tham số do người dùng lựa chọn.
+	Bước 4: Thực hiện dự đoán cho dữ liệu mới: Khi có một mẫu dữ liệu mới, mẫu này được đưa qua tất cả các cây trong rừng. Mỗi cây sẽ đưa ra một dự đoán riêng.
+	Bước 5: Tổng hợp kết quả dự đoán: Kết quả cuối cùng của Random Forest được xác định bằng cách tổng hợp các dự đoán từ tất cả các cây (lấy trung bình trong hồi quy hoặc đa số phiếu trong phân loại)..
+Ưu, nhược điểm của thuật toán
+Ưu điểm:
+	Random Forest có khả năng thực hiện cả hai nhiệm vụ Phân loại và Hồi quy. 
+	Nó có khả năng xử lý các tập dữ liệu lớn với kích thước cao. 
+	Nó nâng cao độ chính xác của mô hình và ngăn chặn vấn đề trang bị quá mức. 
+Nhược điểm của Random Forest: 
+	Mặc dù Random Forest có thể được sử dụng cho cả nhiệm vụ phân loại và hồi quy, nó không phù hợp hơn cho các nhiệm vụ Hồi quy.
+Ứng dụng của thuật toán trong dự báo tài chính
+Trong lĩnh vực tài chính, Random Forest thường được sử dụng để:
+Dự báo giá cổ phiếu dựa trên các đặc trưng kỹ thuật
+Phân tích tầm quan trọng của các biến đầu vào
+Phát hiện các mẫu phi tuyến trong dữ liệu thị trường
+Nhờ khả năng xử lý dữ liệu phức tạp và nhiễu cao, Random Forest là một lựa chọn hiệu quả trong các bài toán tài chính có nhiều biến đầu vào.
+Tuy nhiên, do không có cơ chế xử lý dữ liệu theo thời gian, Random Forest không tận dụng được thông tin về thứ tự thời gian và sự phụ thuộc giữa các thời điểm trong chuỗi dữ liệu.
+ 
+Tìm hiểu thuật toán Long Short-Term Memory (LSTM)
+Tổng quan về thuật toán
+LSTM hay Long Short-Term Memory, là một loại mạng nơron hồi tiếp (recurrent neural network - RNN) được thiết kế để xử lý và nhớ thông tin trong các chuỗi dữ liệu dài. 
+Các mô hình RNN truyền thống gặp khó khăn trong việc xử lý các thông tin lâu dài do hiện tượng vanishing gradient (gradient biến mất). Tuy nhiên, nhờ vào cấu trúc đặc biệt của mình, LSTM có khả năng duy trì thông tin trong một khoảng thời gian dài và giải quyết được vấn đề này.
+Lịch sử phát triển
+LSTM được phát minh bởi Hochreiter và Schmidhuber vào năm 1997 và thiết lập các bản ghi chính xác trong nhiều miền ứng dụng.
+Khoảng năm 2007, LSTM bắt đầu cách mạng hóa khả năng nhận dạng giọng nói, vượt trội so với các mô hình truyền thống trong một số ứng dụng giọng nói. Vào năm 2009, mạng LSTM được đào tạo bởi Connectionist Temporal Classification (CTC) là RNN đầu tiên giành chiến thắng trong các cuộc thi nhận dạng mẫu khi nó giành chiến thắng trong một số cuộc thi về nhận dạng chữ viết tay được kết nối. Vào năm 2014, công ty Baidu của Trung Quốc đã sử dụng các RNN do CTC đào tạo để vượt qua tiêu chuẩn bộ dữ liệu nhận dạng giọng nói 2S09 Switchboard Hub5'00 mà không sử dụng bất kỳ phương pháp xử lý giọng nói truyền thống nào.
+LSTM cũng cải thiện khả năng nhận dạng giọng nói với lượng từ vựng lớn và tổng hợp văn bản thành giọng nói và được sử dụng trong Google Android. Vào năm 2015, tính năng nhận dạng giọng nói của Google được báo cáo là đã có bước nhảy vọt đáng kể về hiệu suất 49% thông qua LSTM do CTC đào tạo
+LSTM đã phá kỷ lục về cải tiến dịch máy, Mô hình hóa ngôn ngữ (Language Modeling) và Xử lý ngôn ngữ đa ngôn ngữ. LSTM kết hợp với mạng thần kinh tích chập (CNN) đã cải thiện tính năng chú thích hình ảnh tự động.
+ 
+Nguyên lý hoạt động
+Cấu trúc
+Cấu trúc chính của một LSTM bao gồm các thành phần sau:
+Trạng thái bộ nhớ (Cell State): Bộ nhớ chính của LSTM, lưu trữ thông tin lâu dài.
+Trạng thái ẩn (Hidden State): Trạng thái ẩn, chứa thông tin của bước hiện tại và được truyền tới bước tiếp theo.
+Cổng điều khiển: gồm 3 cổng chính:
+	Cổng đầu vào (Input Gate): Quyết định những thông tin nào từ đầu vào hiện tại sẽ được lưu trữ trong trạng thái tế bào (cell state).
+	Cổng quên (Forget Gate): Quyết định những thông tin nào sẽ được xóa khỏi trạng thái tế bào.
+	Cổng đầu ra (Output Gate): Quyết định những thông tin nào từ trạng thái tế bào sẽ được phát ra như là đầu ra của LSTM.
+ 
+Hình 2.5. Cấu trúc LSTM
+ 
+Cơ chế hoạt động
+ 
+Hình 2.6. Sơ đồ hoạt động LSTM
+Khi một dữ liệu được truyền vào thì nó sẽ lần lượt đi qua các cổng theo thứ tự: Cổng quên → Cổng đầu vào → Cập nhật trạng thái bộ nhớ → Cổng đầu ra.
+Cổng quên
+	Khi dữ liệu đi qua cổng quên thì cổng này sẽ quyết định những thông tin nào từ trạng thái bộ nhớ trước đó C_(t-1) cần được giữ lại hoặc quên.
+	Công thức: f_t= σ(W_f  .[h_(t-1),x_t] + b_f)
+	Trong đó:
++ σ: Hàm sigmoid, trả về giá trị từ 0 → 1 (Nếu giá trị trả về càng gần 0 thì   sẽ loại bỏ phần lớn thông tin, Nếu giá trị trả về càng gần 1 thì thông tin được giữ lại sẽ càng nhiều)
+		+ [h_(t-1),x_t]: Trạng thái ẩn trước đó và đầu vào hiện tại
++ f_t: Vector cổng quên
+Cổng đầu vào
+Cổng đầu vào sẽ thực hiện 2 bước chính:
+Bước 1: Tạo cổng điều khiển 〖(i〗_t):
+Cổng này xác định mức độ thông tin từ đầu vào hiện tại cần được lưu giữ. Nó sử dụng hàm sigmoid để trả về giá trị từ 0 đến 1, trong đó:
+0: loại bảo hoàn toàn thông tin
+1: Lưu lại toàn bộ thông tin
+Công thức:
+i_t=σ(W_t  .[h_(t-1),x_t] +b_i)
+Trong đó:
+	[h_(t-1),x_t]: Kết hợp trạng thái ẩn từ bước (h_(t-1)) và đầu vào hiện tại (x_t)
+	W_i: Ma trận trọng số của cổng đầu vào
+	b_i: Hệ số bù của cổng đầu vào
+	σ: Hàm sigmoid
+	Bước 2: Tạo thông tin ứng viên 〖(C ̃〗_t):
+Ứng viên là thông tin mới được tạo từ đầu vào hiện tại và trạng thái trước đó. Hàm tanh được sử dụng để chuẩn hóa thông tin vào khoảng -1 đến 1.
+Công thức:
+C ̃_t=tanh⁡(W_c  .[h_(t-1),x_t ]+ b_c
+Trong đó:
+     + C ̃_t: Ứng viên thông tin mới
+     + W_c: Ma trận trọng số trong thông tin ứng viên
+     + b_c: Hệ số bù
+Cập nhật trạng thái bộ nhớ
+Cổng đầu vào cung cấp 2 giá trị i_t và C ̃_t. Hai giá trị này sẽ được kết hợp để chọn phần thông tin ứng viện được thêm vào bộ nhớ:
+C_t=f_t  .C_(t-1)+ i_t  .C ̃_t
+Trong đó:
+	f_t  .C_(t-1): Phần trạng thái bộ nhớ cũ được giữ lại nhờ cổng quên
+	i_t  .C ̃_t: Phần thông tin mới được lưu trữ vào trạng thái bộ nhớ.
+Cổng đầu ra
+Cổng đầu ra xác định mức độ thông tin nào từ trạng thái bộ nhớ C_t cần được xuất ra. Tương tự như cổng quên và cổng đầu vào, cổng đầu ra sử dụng hàm sigmoid để tính toán một giá trị trong khoảng 0 đến 1. Mức độ này quyết định thông tin nào từ bộ nhớ sẽ được đưa vào trạng thái ẩn.
+Tính toán cổng đầu ra (o_t):
+o_t=σ(W_o  .[h_(t-1),x_t ]+b_o)
+Trong đó:
+	o_t: Cổng đầu ra, giá trị từ 0 đến 1
+	σ: Hàm sigmoid
+	W_o: Ma trận trọng số của cổng đầu ra
+	[h_(t-1),x_t ]: Kết hợp trạng thái ẩn từ bước (h_(t-1)) và đầu vào hiện tại (x_t)
+	b_o: Hệ số bù của cổng đầu ra
+Tính toán trạng thái ẩn (h_t):
+Sau khi cổng đầu ra xác định phần thông tin cần xuất ra từ trạng thái bộ nhớ, trạng thái ẩn h_t được tính toán bằng cách kết hợp thông tin đã được chọn lọc từ trạng thái bộ nhớ với cổng đầu ra:
+Công thức:
+h_t=o_t  .tanh⁡(C_t)
+Trong đó:
+	tanh(C_t): Sử dụng hàm tanh để chuẩn hóa trạng thái bộ nhớ C_t trong khoảng −1 đến 1. 
+	o_t: Cổng đầu ra quyết định mức độ thông tin từ bộ nhớ cần được đưa ra.
+	h_t: Trạng thái ẩn, là đầu ra của LSTM tại bước thời gian t.
+Ưu, nhược điểm của thuật toán trong dự báo tài chính
+Ưu điểm
+Khả năng học phụ thuộc dài hạn: LSTM có khả năng ghi nhớ thông tin trong thời gian dài thông qua cơ chế cell state, giúp mô hình nắm bắt các xu hướng và chu kỳ trong dữ liệu giá cổ phiếu. Điều này cho phép mô hình hiểu được ảnh hưởng của các biến động trong quá khứ đến hiện tại, vượt trội so với các mô hình truyền thống.
+Mô hình hóa quan hệ phi tuyến: LSTM sử dụng các hàm kích hoạt phi tuyến như sigmoid và tanh, giúp mô hình biểu diễn các mối quan hệ phức tạp trong dữ liệu tài chính, vốn không tuân theo quy luật tuyến tính đơn giản.
+Phù hợp với dữ liệu chuỗi thời gian: LSTM được thiết kế để xử lý dữ liệu tuần tự, trong đó thứ tự thời gian được giữ nguyên, giúp mô hình khai thác hiệu quả sự phụ thuộc giữa các thời điểm trong chuỗi giá.
+Khả năng lọc nhiễu và chọn lọc thông tin: Nhờ cơ chế các cổng (gates), LSTM có thể loại bỏ các thông tin không quan trọng và giữ lại các tín hiệu có giá trị, giúp tăng độ ổn định khi làm việc với dữ liệu tài chính nhiều nhiễu.
+Nhược điểm
+Chi phí tính toán cao: LSTM có cấu trúc phức tạp với nhiều tham số, dẫn đến thời gian huấn luyện dài và yêu cầu tài nguyên tính toán lớn.
+Yêu cầu dữ liệu lớn: Để đạt hiệu quả cao, LSTM cần lượng dữ liệu lịch sử đủ lớn, nếu không mô hình dễ bị overfitting hoặc học sai pattern.
+Không tự xử lý yếu tố bên ngoài: LSTM chỉ học từ dữ liệu đầu vào, nên không phản ánh được các yếu tố như tin tức hoặc biến động vĩ mô nếu không được tích hợp thêm.
+Ứng dụng của thuật toán trong dự báo tài chính
+Dự báo giá cố phiếu: LSTM được sử dụng để dự đoán giá cổ phiếu trong tương lai dựa trên dữ liệu lịch sử, giúp nhận diện xu hướng biến động của thị trường.
+Dự đoán xu hướng (tăng/giảm/đi ngang): Mô hình có thể phân loại xu hướng giá, hỗ trợ nhà đầu tư trong việc ra quyết định mua hoặc bán.
+Phát hiện chu kỳ và pattern thị trường: LSTM có khả năng nhận diện các chu kỳ và mẫu lặp lại trong dữ liệu, giúp hiểu rõ hơn về hành vi của thị trường.
+Kết hợp với dữ liệu tin tức: LSTM có thể tích hợp với dữ liệu sentiment từ tin tức để cải thiện độ chính xác dự báo và phản ánh tốt hơn các yếu tố bên ngoài.
+So sánh các mô hình dự báo
+Bảng 2.1. Bảng so sánh các mô hình dự báo
+Tiêu chí	Linear Regression	Random Forest	LSTM
+Loại mô hình	Mô hình tuyến tính	Mô hình học máy (Ensemble)	Mô hình học sâu (RNN)
+Khả năng mô hình hóa phi tuyến	Kém	Tốt	Rất tốt
+Xử lý dữ liệu chuỗi thời gian	Không hỗ trợ	Hạn chế	Tốt
+Học phụ thuộc dài hạn	Không	Không	Có
+Khả năng xử lý nhiễu (noise)	Kém	Tốt	Tốt
+Khả năng mở rộng với nhiều đặc trưng	Trung bình	Tốt	Rất tốt
+Khả năng giải thích mô hình	Dễ	Trung bình	Khó
+Chi phí tính toán	Thấp	Trung bình	Cao
+Yêu cầu dữ liệu lớn	Thấp	Trung bình	Cao
+Phù hợp với dữ liệu tài chính	Thấp	Trung bình	Cao
+Khả năng phản ánh yếu tố thời gian	Không	Hạn chế	Rất tốt
+Từ bảng so sánh trên, có thể thấy rằng Linear Regression chỉ phù hợp làm mô hình cơ sở do không thể xử lý dữ liệu phi tuyến và chuỗi thời gian. Random Forest cải thiện khả năng xử lý phi tuyến và nhiễu, tuy nhiên vẫn bị hạn chế trong việc khai thác cấu trúc thời gian của dữ liệu. Trong khi đó, LSTM thể hiện ưu thế vượt trội khi có khả năng học các phụ thuộc dài hạn và mô hình hóa hiệu quả dữ liệu chuỗi thời gian
+Lựa chọn mô hình và định hướng nghiên cứu
+Từ các phân tích trên, có thể thấy rằng LSTM là mô hình phù hợp nhất cho bài toán dự báo giá cổ phiếu nhờ khả năng xử lý dữ liệu chuỗi thời gian và học các phụ thuộc dài hạn. Do đó, LSTM được lựa chọn làm mô hình chủ đạo trong đề tài.
+Tuy nhiên, các mô hình như Linear Regression và Random Forest vẫn được giữ lại và triển khai song song nhằm mục đích so sánh và đánh giá hiệu quả trong quá trình thực nghiệm. Việc sử dụng nhiều mô hình giúp đảm bảo tính khách quan và cung cấp cơ sở để đánh giá mức độ cải thiện của mô hình LSTM.
+Mặc dù LSTM có nhiều ưu điểm, mô hình này vẫn tồn tại một hạn chế quan trọng là chỉ dựa trên dữ liệu lịch sử và chưa phản ánh được các yếu tố ngoại sinh như tin tức và tâm lý thị trường. Trong thực tế, các yếu tố này có thể ảnh hưởng mạnh đến biến động giá cổ phiếu trong ngắn hạn.
+Do đó, cần thiết phải xây dựng một cơ chế kết hợp thêm thông tin từ bên ngoài nhằm nâng cao khả năng dự báo của mô hình.
+Cơ chế kết hợp Sentiment vào mô hình dự báo
+Động cơ xây dựng mô hình lai (Hybrid Model)
+ 
+Hình 2.7. Động cơ xây dựng mô hình lai
+Trong bài toán dự báo tài chính, các mô hình dựa trên dữ liệu lịch sử như LSTM có khả năng học tốt các quy luật chuỗi thời gian. Tuy nhiên, chúng gặp hạn chế trong việc phản ánh các yếu tố ngoại sinh (exogenous factors), đặc biệt là tin tức và tâm lý thị trường.
+Trong thực tế, giá cổ phiếu thường chịu ảnh hưởng mạnh từ các thông tin mới như:
+Công bố kết quả kinh doanh
+Thay đổi chính sách
+Sự kiện bất ngờ
+Những yếu tố này không tồn tại trong dữ liệu giá quá khứ nhưng lại có tác động lớn trong ngắn hạn.
+Do đó, đề tài đề xuất một mô hình lai (Hybrid Model), kết hợp:
+LSTM → học từ dữ liệu lịch sử
+Sentiment Analysis (LLM) → phản ánh thông tin thị trường
+Đầu ra của mô hình LSTM
+Mô hình LSTM không chỉ dự báo giá mà trả về hai tham số quan trọng:
+μ: kỳ vọng lợi nhuận (Expected Return)
+σ: độ biến động (Volatility)
+Ý nghĩa:
+μ phản ánh mức sinh lời dự kiến của cổ phiếu
+σ phản ánh mức độ rủi ro và biến động giá
+Hai tham số này cho phép mô hình hóa phân phối lợi nhuận, thay vì chỉ dự đoán một giá trị đơn lẻ. 
+Xây dựng chỉ số Sentiment
+Từ tập hợp các tin tức, hệ thống tính toán:
+Sentiment score: giá trị trong khoảng [-1, 1]
+Impact score: mức độ ảnh hưởng của từng tin
+Cách tổng hợp:
+ 
+Ngoài ra, hệ thống áp dụng cơ chế Time Decay để giảm trọng số của tin cũ:
+ 
+Trong đó:
+t: thời gian kể từ khi tin xuất hiện
+λ: hệ số suy giảm 
+Công thức điều chỉnh Sentiment 
+ 
+Trong đó:
+μ: kỳ vọng lợi nhuận 
+σ: độ biến động
+sentiment: điểm cảm xúc tổng hợp
+impact: mức độ ảnh hưởng
+α, β: hệ số điều chỉnh 
+Ý nghĩa của các hệ số α và β
+α: kiểm soát mức độ ảnh hưởng của sentiment lên lợi nhuận
+β: kiểm soát mức độ ảnh hưởng lên rủi ro
+Lý do:
+Đảm bảo sentiment không lấn át mô hình LSTM 
+Phản ánh thực tế: rủi ro thường được điều chỉnh thận trọng hơn
+Kết luận chương 2
+Trong chương này, đề tài đã trình bày đặc điểm của bài toán dự báo giá cổ phiếu với các tính chất như phi tuyến, nhiễu cao và phụ thuộc theo thời gian. Các mô hình tiêu biểu gồm Linear Regression, Random Forest và LSTM đã được phân tích và so sánh, cho thấy LSTM là lựa chọn phù hợp nhất nhờ khả năng xử lý dữ liệu chuỗi và học phụ thuộc dài hạn. Tuy nhiên, các mô hình này vẫn còn hạn chế khi chưa phản ánh được các yếu tố ngoại sinh như tin tức và tâm lý thị trường. Do đó, đề tài đề xuất cơ chế kết hợp giữa LSTM và phân tích cảm xúc nhằm nâng cao hiệu quả dự báo. Những nội dung trong chương này là cơ sở để triển khai hệ thống dự báo được trình bày trong chương tiếp theo.

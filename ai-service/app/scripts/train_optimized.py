@@ -52,8 +52,8 @@ def train_model():
     H = torch.tensor([[s["horizon"]] for s in samples], dtype=torch.float32)
     Y = torch.tensor([[s["target_return"]] for s in samples], dtype=torch.float32)
     
-    # Chia train/val (90/10)
-    split = int(0.9 * len(X))
+    # Chia train/val (80/20)
+    split = int(0.8 * len(X))
     train_ds = TensorDataset(X[:split], H[:split], Y[:split])
     val_ds = TensorDataset(X[split:], H[split:], Y[split:])
     
