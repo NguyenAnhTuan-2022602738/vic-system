@@ -19,7 +19,7 @@ from app.core.config import settings
 
 def train_model():
     print("🚀 Bắt đầu quy trình huấn luyện LSTM Hybrid Siêu cấp...", flush=True)
-    # df_raw = df_raw[df_raw['date'] >= "2021-01-01"]
+    
     print("🔍 DEBUG: Đọc dữ liệu trực tiếp từ CSV...", flush=True)
     CSV_PATH = r"c:\Users\cuida\Documents\DATN\vic-system\ai-service\data\raw\vic_price.csv"
     df_raw = pd.read_csv(CSV_PATH)

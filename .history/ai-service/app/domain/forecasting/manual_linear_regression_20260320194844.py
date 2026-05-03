@@ -2,7 +2,7 @@ import numpy as np
 from app.core.logger import logger
 
 class ManualLinearRegression:
-    """Hồi quy tuyến tính triển khai bằng Gradient Descent."""
+    """Hồi quy tuyến tính triển khai thủ công bằng Gradient Descent."""
     
     def __init__(self, learning_rate=0.01, iterations=1000):
         self.lr = learning_rate
