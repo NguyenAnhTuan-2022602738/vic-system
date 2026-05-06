@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chương 3 - Tính toán chi tiết (So sánh Multi-step)</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { background-color: #525659; font-family: "Times New Roman", Times, serif; padding: 20px; line-height: 1.3; }
+        .document { 
+            background-color: white; 
+            width: 210mm; 
+            margin: 0 auto; 
+            padding: 2.5cm 2cm 2.5cm 3cm; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            min-height: 297mm;
+        }
+        h3 { font-size: 13pt; font-weight: bold; margin-top: 20px; }
+        h4 { font-size: 12pt; font-weight: bold; margin-top: 15px; }
+        p { text-align: justify; font-size: 12pt; text-indent: 1.27cm; margin: 8px 0; }
+        .no-indent { text-indent: 0; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid black; padding: 4px 8px; text-align: center; font-size: 11pt; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .formula { text-align: center; font-style: italic; margin: 10px 0; font-family: "Cambria Math", Cambria, serif; font-size: 12pt; font-weight: bold; }
+        .caption { text-align: center; font-weight: bold; font-size: 11pt; margin: 10px 0; }
+        .highlight { background-color: #ffff00; }
+        .bold { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="document">
+    <h3>3.1.6. Phân tích khả năng dự báo đa bước (Multi-step Forecasting)</h3>
+    
+    <p>Một trong những lý do quan trọng nhất để chúng tôi lựa chọn LSTM làm mô hình chủ đạo thay vì Random Forest hay Linear Regression là khả năng <b>dự báo đa bước</b> (t+2, t+3...).</p>
+
+    <h4>3.1.6.1. Hạn chế của mô hình Tĩnh (Linear Regression & Random Forest)</h4>
+    <p>Các mô hình như Linear hay RF là mô hình "Snapshot". Để dự báo ngày <i>t+2</i>, chúng yêu cầu các đặc trưng đầu vào (Open, High, Low) của ngày <i>t+1</i>. Tuy nhiên, tại thời điểm hiện tại (ngày <i>t</i>), các giá trị này là chưa biết.</p>
+    <p>Nếu cố tình dự báo, ta phải sử dụng kết quả dự báo của ngày <i>t+1</i> làm giả định đầu vào cho ngày <i>t+2</i>. Điều này dẫn đến hiện tượng <b>tích tụ sai số (Error Propagation)</b>. Chỉ sau 2-3 bước dự báo, kết quả của RF và Linear thường sẽ bị lệch hoàn toàn khỏi thực tế.</p>
+
+    <h4>3.1.6.2. Ưu thế của mô hình Động (LSTM)</h4>
+    <p>Ngược lại, LSTM sở hữu "Bộ nhớ dài hạn" thông qua <b>Trạng thái ô nhớ (Cell State)</b>. Khi dự báo cho ngày <i>t+2</i>, LSTM không chỉ dựa vào con số giá của ngày <i>t+1</i>, mà nó còn sử dụng <b>Trạng thái ẩn (Hidden State)</b> được tích lũy từ chuỗi 60 phiên trước đó.</p>
+    <p>Cơ chế này cho phép LSTM hiểu được "đà" (momentum) và "xu hướng" (trend) của thị trường, giúp kết quả dự báo dài hạn ổn định và có tính logic về mặt chuỗi thời gian hơn hẳn các mô hình tĩnh.</p>
+
+    <p class="caption">Bảng 3.10. Khả năng mở rộng dự báo của các mô hình</p>
+    <table>
+        <tr><th>Mô hình</th><th>Dự báo T+1</th><th>Dự báo T+2...T+5</th><th>Cơ chế hỗ trợ</th></tr>
+        <tr><td>Linear Regression</td><td>Tốt (ngắn hạn)</td><td>Rất kém</td><td>Không có bộ nhớ</td></tr>
+        <tr><td>Random Forest</td><td>Tốt</td><td>Kém</td><td>Không có tính thứ tự</td></tr>
+        <tr class="highlight"><td>Hybrid LSTM</td><td>Rất tốt</td><td>Tốt</td><td>Trạng thái ẩn (Hidden State)</td></tr>
+    </table>
+
+    <p><b>Kết luận:</b> Khả năng dự báo xa là yếu tố then chốt để nhà đầu tư xây dựng chiến lược giao dịch trung hạn. Đây là lý do đanh thép nhất để hệ thống sử dụng LSTM làm kiến trúc cốt lõi.</p>
+</div>
+
+</body>
+</html>

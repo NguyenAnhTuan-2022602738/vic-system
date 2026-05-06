@@ -36,6 +36,12 @@ ai-service/models/active_model.*
 ai-service/models/archive/
 
 # Data files
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.h5
+*.html
 tmp/
 tmp_news.json
 

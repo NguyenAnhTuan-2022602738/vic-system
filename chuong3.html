@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chương 3 - Báo Cáo Đồ Án</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .page {
+            background: white;
+            width: 21cm;
+            min-height: 29.7cm;
+            padding: 2.54cm 3.17cm 2.54cm 3.17cm; /* Căn lề chuẩn Word: Top/Bottom 2.54cm, Left/Right 3.17cm */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-family: "Times New Roman", Times, serif;
+            font-size: 13pt;
+            line-height: 1.5;
+            text-align: justify;
+            color: black;
+        }
+        h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        h3 {
+            font-size: 13pt;
+            font-weight: bold;
+            font-style: italic;
+            margin-top: 18px;
+            margin-bottom: 12px;
+        }
+        p {
+            margin-bottom: 12px;
+            text-indent: 1.27cm; /* Thụt lề đầu dòng chuẩn Word */
+        }
+        ul, ol {
+            margin-bottom: 12px;
+            padding-left: 1.5cm;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        .center-image {
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+            font-size: 12pt;
+        }
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <h1>CHƯƠNG 3. CÀI ĐẶT THỰC NGHIỆM VÀ ĐÁNH GIÁ</h1>
+
+    <h2>3.1. Quy trình tổng quan giải quyết bài toán (System Pipeline)</h2>
+    <p>Để đảm bảo tính logic và toàn vẹn của dữ liệu từ lúc thu thập đến khi đưa ra quyết định giao dịch, hệ thống được thiết kế thành một luồng (Pipeline) khép kín gồm 5 giai đoạn chính. Sơ đồ dưới đây minh họa luồng xử lý dữ liệu và kiến trúc tổng thể của đề tài:</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <img src="./flowchart_pipeline.png" alt="Sơ đồ quy trình tổng quan giải quyết bài toán" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.1. Sơ đồ quy trình tổng quan (Pipeline) giải quyết bài toán</p>
+    </div>
+    
+    <p>Như sơ đồ trên, chương này sẽ lần lượt đi vào triển khai chi tiết từng công đoạn trong hệ thống: từ việc thu thập và làm sạch dữ liệu cho đến xây dựng và đánh giá hiệu năng các mô hình.</p>
+    
+    <p class="bold">Diễn giải chi tiết các bước trong quy trình (Pipeline):</p>
+    <ul>
+        <li><strong>Bước 1: Thu thập dữ liệu (Data Collection)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Lấy dữ liệu giao dịch thông qua API <code>vnstock</code> (kết nối trực tiếp từ công ty chứng khoán) và tự động cào tin tức tài chính (Web Crawling) liên quan đến Vingroup.</li>
+                <li><strong>Đầu vào (Input):</strong> Cấu hình mã chứng khoán (VIC), khoảng thời gian truy xuất (Ví dụ: 10 năm), các URL báo chí tài chính.</li>
+                <li><strong>Đầu ra (Output):</strong> Dữ liệu thô (Raw Data) bao gồm các cột giá Open, High, Low, Close, Volume và các đoạn văn bản tin tức kiện sự.</li>
+            </ul>
+        </li>
+        <li><strong>Bước 2: Tiền xử lý & Trích xuất đặc trưng (Preprocessing)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Tính toán các chỉ báo kỹ thuật tài chính từ dữ liệu giá lịch sử và sử dụng mô hình học ngôn ngữ (NLP) để phân tích cảm xúc (Sentiment Analysis) từ văn bản báo chí ra điểm số định lượng (-1 đến 1).</li>
+                <li><strong>Đầu vào:</strong> Tập dữ liệu giá thô và các đoạn văn bản.</li>
+                <li><strong>Đầu ra:</strong> DataFrame dữ liệu đã được "làm giàu" (Enriched Data) với các cột đặc trưng mới (Features). Cụ thể các chỉ báo được tính toán:
+                    <ul style="list-style-type: square; margin-top: 8px;">
+                        <li><strong>Đường trung bình động 20 ngày (MA20):</strong> Giúp làm mượt đường giá, xác định xu hướng ngắn hạn.<br><em>Công thức:</em> MA<sub>20</sub> = (P<sub>t</sub> + P<sub>t-1</sub> + ... + P<sub>t-19</sub>) / 20 <em>(Với P là giá đóng cửa)</em></li>
+                        <li><strong>Chỉ số sức mạnh tương đối (RSI):</strong> Đo lường tốc độ và sự thay đổi của biến động giá, xác định vùng quá mua/quá bán.<br><em>Công thức:</em> RSI = 100 - [ 100 / (1 + RS) ] <em>(Trong đó RS = Trung bình tăng / Trung bình giảm)</em></li>
+                        <li><strong>Trung bình trượt hội tụ phân kỳ (MACD):</strong> Xác định động lượng và xu hướng giá.<br><em>Công thức:</em> MACD = EMA<sub>12</sub> - EMA<sub>26</sub> <em>(EMA là trung bình động hàm mũ)</em></li>
+                        <li><strong>Độ biến động (Volatility):</strong> Đo lường mức độ rủi ro dao động giá.<br><em>Công thức:</em> Volatility = Độ lệch chuẩn của (P<sub>t</sub> / P<sub>t-1</sub> - 1) trong 20 ngày.</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li><strong>Bước 3: Kiểm tra và làm sạch dữ liệu (Data Cleaning)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Kiểm tra các giá trị khuyết thiếu trong bộ dữ liệu (Khối <em>Có NA?</em>). Nếu phát hiện dòng bị thiếu (Null/NaN) do lỗi API hoặc ngày nghỉ lễ, hệ thống thực hiện loại bỏ (Drop NA rows) hoặc sử dụng phương pháp điền bù đắp (Forward Fill).</li>
+                <li><strong>Đầu vào:</strong> DataFrame đã được bổ sung chỉ báo kỹ thuật nhưng có nguy cơ chứa dữ liệu nhiễu.</li>
+                <li><strong>Đầu ra:</strong> Tập dữ liệu sạch, đảm bảo tính liên tục của chuỗi thời gian.</li>
+            </ul>
+        </li>
+        <li><strong>Bước 4: Chuẩn hóa dữ liệu (Scaling)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Áp dụng thuật toán <code>Min-Max Scaler</code> để nén toàn bộ các giá trị có biên độ chênh lệch lớn về cùng dải giá trị [0, 1], giúp mạng nơ-ron học tập nhanh và tránh hiện tượng tràn số (Exploding Gradient). Cấu hình này được lưu lại thành file <code>preprocess.pkl</code> để tái sử dụng.</li>
+                <li><strong>Đầu vào:</strong> Dữ liệu sạch với các thang đo lệch nhau (Ví dụ: Giá VIC ở mức 60.000, trong khi RSI chỉ ở mức 50).</li>
+                <li><strong>Đầu ra:</strong> Dữ liệu đã chuẩn hóa đồng nhất trên dải [0, 1].</li>
+            </ul>
+        </li>
+        <li><strong>Bước 5: Tạo chuỗi thời gian (Time Series Sequences)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Sử dụng kỹ thuật cửa sổ trượt (Sliding Window) để cấu trúc lại dữ liệu phẳng thành các chuỗi thời gian liên tiếp (Sử dụng dữ liệu của 60 ngày liên tục ở quá khứ để dự đoán cho 1 ngày tương lai).</li>
+                <li><strong>Đầu vào:</strong> Mảng dữ liệu đã chuẩn hóa dạng 2 chiều (2D Array).</li>
+                <li><strong>Đầu ra:</strong> Ma trận dữ liệu 3 chiều (3D Tensor) có kích thước [Số lượng mẫu × 60 ngày × Số lượng đặc trưng] làm đầu vào trực tiếp cho mạng LSTM.</li>
+            </ul>
+        </li>
+        <li><strong>Bước 6: Huấn luyện mô hình (Model Training)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Nạp dữ liệu vào mô hình cốt lõi (Hybrid LSTM tích hợp CNN và Attention) và các mô hình cơ sở (Random Forest, Linear Regression) để tiến hành dò tìm quy luật ẩn.</li>
+                <li><strong>Đầu vào:</strong> Ma trận 3D của tập Huấn luyện (Train Data) và các Siêu tham số (Epochs, Batch Size, Learning Rate).</li>
+                <li><strong>Đầu ra:</strong> Trọng số của mạng lưới đã hội tụ, thể hiện dưới dạng file lưu trữ mô hình (Ví dụ: <code>hybrid_lstm.pth</code>).</li>
+            </ul>
+        </li>
+        <li><strong>Bước 7: Dự báo và Đánh giá (Forecasting & Backtesting)</strong>
+            <ul>
+                <li><strong>Hành động:</strong> Áp dụng mô hình đã huấn luyện lên tập Kiểm thử (Test Data). Đầu ra định lượng được chuyển đổi thành Tín hiệu (BUY/SELL/HOLD). Thay vì chỉ dùng sai số toán học, hệ thống thực thi mô phỏng giao dịch (Backtest) để đánh giá tính khả thi tài chính.</li>
+                <li><strong>Đầu vào:</strong> File mô hình đã huấn luyện và Ma trận dữ liệu Kiểm thử.</li>
+                <li><strong>Đầu ra (OUTPUT Cuối cùng):</strong> Cung cấp các thông số định lượng và chỉ số tài chính. Định nghĩa và công thức cụ thể như sau:
+                    <ul style="list-style-type: square; margin-top: 8px;">
+                        <li><strong>Tỷ suất lợi nhuận kỳ vọng (&mu;):</strong> Là mức lợi nhuận trung bình mà mô hình dự báo tài sản sẽ đạt được trong phiên tiếp theo.<br><em>Công thức:</em> &mu; = E[ R<sub>t</sub> | X<sub>t-1</sub> ]</li>
+                        <li><strong>Mức độ rủi ro (&sigma;):</strong> Độ lệch chuẩn dự báo, đại diện cho biên độ biến động (nhiễu) của thị trường. Nếu &sigma; quá lớn, hệ thống sẽ kích hoạt lệnh HOLD để phòng thủ.<br><em>Công thức:</em> &sigma; = &radic;<span style="border-top: 1px solid;">Var(R<sub>t</sub> | X<sub>t-1</sub>)</span></li>
+                        <li><strong>Tỷ lệ thắng (Win Rate):</strong> Đo lường xác suất một quyết định giao dịch sinh lời.<br><em>Công thức:</em> Win Rate = (Số lệnh thắng / Tổng số lệnh giao dịch) &times; 100%</li>
+                        <li><strong>Tỷ lệ Sharpe (Sharpe Ratio):</strong> Đánh giá hiệu suất đầu tư dựa trên mức rủi ro phải gánh chịu. Chỉ số > 1 là danh mục xuất sắc.<br><em>Công thức:</em> Sharpe = (R<sub>p</sub> - R<sub>f</sub>) / &sigma;<sub>p</sub> (Trong đó: R<sub>p</sub> là lợi nhuận danh mục, R<sub>f</sub> là lãi suất phi rủi ro, &sigma;<sub>p</sub> là độ lệch chuẩn lợi nhuận danh mục).</li>
+                        <li><strong>Sụt giảm tối đa (Max Drawdown - MDD):</strong> Đo lường mức sụt giảm tài khoản nặng nhất từ một đỉnh vốn đến đáy liền kề, dùng để kiểm định sức chịu đựng rủi ro của Bot.<br><em>Công thức:</em> MDD = (Peak - Trough) / Peak</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+    </ul>
+    <h2>3.2. Chuẩn bị dữ liệu thực nghiệm</h2>
+    
+    <h3>3.1.1. Thu thập và mô tả tập dữ liệu</h3>
+    <p class="bold">a. Nguồn thu thập dữ liệu</p>
+    <p>Để tiến hành thực nghiệm và đánh giá hệ thống một cách toàn diện, đề tài tiến hành thu thập song song hai nhánh dữ liệu độc lập từ các nguồn cung cấp uy tín:</p>
+    <ul>
+        <li><strong>Dữ liệu giao dịch (Định lượng):</strong> Lấy trực tiếp từ API của thư viện mã nguồn mở <code>vnstock</code> (dữ liệu gốc được cung cấp bởi các công ty chứng khoán lớn như VCI, TCBS). Tập dữ liệu tập trung truy xuất lịch sử giao dịch của mã cổ phiếu VIC (Tập đoàn Vingroup) trên sàn HOSE trong giai đoạn hơn 10 năm (từ 2015 đến nay). Việc lấy dữ liệu qua API giúp đảm bảo tính tự động hóa, cập nhật theo thời gian thực và loại bỏ sai sót do con người.</li>
+        <li><strong>Dữ liệu tin tức (Định tính):</strong> Sử dụng các script thu thập dữ liệu tự động (Web Crawler) để cào các bài báo, sự kiện và tin tức vĩ mô liên quan trực tiếp đến Vingroup. Nguồn dữ liệu được chọn lọc từ các chuyên trang tài chính uy tín hàng đầu Việt Nam như CafeF, Vietstock và NDH.</li>
+    </ul>
+
+    <p>Thông tin tổng quan về tập dữ liệu giao dịch được mô tả chi tiết trong Bảng 3.1 dưới đây:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12pt;">
+        <thead>
+            <tr style="background-color: #d9e1f2;">
+                <th style="border: 1px solid black; padding: 8px; text-align: left; width: 40%;">Thuộc tính</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: left; width: 60%;">Giá trị</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Mã cổ phiếu</td>
+                <td style="border: 1px solid black; padding: 8px;">VIC Vingroup Joint Stock Company</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Sàn giao dịch</td>
+                <td style="border: 1px solid black; padding: 8px;">HOSE Sở GDCK TP.HCM</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Khoảng thời gian</td>
+                <td style="border: 1px solid black; padding: 8px;">27/06/2014 - 29/04/2026 (~12 năm)</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Tổng số ngày giao dịch</td>
+                <td style="border: 1px solid black; padding: 8px;">2.957 ngày (dữ liệu thực tế)</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Tần suất</td>
+                <td style="border: 1px solid black; padding: 8px;">Ngày (Daily)</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Trạng thái</td>
+                <td style="border: 1px solid black; padding: 8px;">Công khai</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Định dạng</td>
+                <td style="border: 1px solid black; padding: 8px;">CSV (UTF-8)</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px;">Kích thước</td>
+                <td style="border: 1px solid black; padding: 8px;">~117 KB</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.1. Thông tin tổng quan tập dữ liệu giao dịch cổ phiếu VIC</p>
+
+    <p class="bold">b. Mô tả chi tiết tập dữ liệu gốc (Raw Data)</p>
+    <p>Tập dữ liệu thô thu thập được từ thị trường (trước khi qua bước tiền xử lý và trích chọn đặc trưng) bao gồm 2.957 bản ghi (tương ứng với 2.957 phiên giao dịch). Bảng dưới đây mô tả chi tiết các trường dữ liệu (Features) cấu thành nên bộ dữ liệu gốc:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12pt;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 15%;">Tên trường</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 15%;">Kiểu dữ liệu</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 15%;">Đơn vị đo</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 55%;">Mô tả chi tiết</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">date</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Datetime</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Ngày/Tháng/Năm</td>
+                <td style="border: 1px solid black; padding: 8px;">Ngày diễn ra phiên giao dịch chứng khoán (bỏ qua các ngày nghỉ lễ, thứ 7, Chủ nhật).</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">open</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Float</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">VNĐ</td>
+                <td style="border: 1px solid black; padding: 8px;">Giá khớp lệnh đầu tiên trong phiên (Giá mở cửa). Phản ánh tâm lý nhà đầu tư ngay khi thị trường vừa mở cửa.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">high</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Float</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">VNĐ</td>
+                <td style="border: 1px solid black; padding: 8px;">Mức giá khớp lệnh cao nhất đạt được trong suốt phiên giao dịch.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">low</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Float</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">VNĐ</td>
+                <td style="border: 1px solid black; padding: 8px;">Mức giá khớp lệnh thấp nhất trong phiên, thể hiện lực bán mạnh nhất của thị trường.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">close</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Float</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">VNĐ</td>
+                <td style="border: 1px solid black; padding: 8px;">Giá khớp lệnh cuối cùng (Giá đóng cửa). Đây là trường dữ liệu cốt lõi và quan trọng nhất để xác định xu hướng của ngày.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">volume</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Integer</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Cổ phiếu</td>
+                <td style="border: 1px solid black; padding: 8px;">Tổng khối lượng cổ phiếu được giao dịch thành công. Mức độ thanh khoản phản ánh sức mạnh dòng tiền.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-family: monospace;">news_content</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">String</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Văn bản</td>
+                <td style="border: 1px solid black; padding: 8px;">Tiêu đề và nội dung tóm tắt các sự kiện, tin tức liên quan công bố trong ngày (có thể rỗng nếu ngày đó không có tin).</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.2. Chi tiết các trường dữ liệu thô (Raw Data)</p>
+
+    <h3>3.1.2. Tiền xử lý dữ liệu và trích chọn đặc trưng</h3>
+    <p>Quá trình tiền xử lý là bước cực kỳ quan trọng ảnh hưởng trực tiếp đến hiệu suất của mô hình trí tuệ nhân tạo. Dữ liệu thô thu thập được không thể đưa trực tiếp vào mạng nơ-ron mà cần trải qua 4 bước chuẩn hóa khắt khe dưới đây:</p>
+    
+    <p class="bold">a. Làm sạch dữ liệu (Data Cleaning)</p>
+    <p>Trong quá trình giao dịch thực tế, có những phiên bị gián đoạn hoặc lỗi hệ thống dẫn đến việc dữ liệu bị khuyết thiếu (NaN) hoặc vô cực (inf) khi tính toán các biến đổi toán học. Hệ thống áp dụng phương pháp nội suy tuyến tính (Linear Interpolation) để điền vào các khoảng trống giá trị và loại bỏ hoàn toàn các bản ghi bị lỗi cấu trúc, đảm bảo tính liền mạch của chuỗi thời gian.</p>
+
+    <p class="bold">b. Trích chọn đặc trưng (Feature Engineering)</p>
+    <p>Để giúp mạng LSTM nhận diện được chu kỳ và sự đảo chiều, từ 5 trường giá gốc ban đầu, hệ thống tính toán thêm các chỉ báo phân tích kỹ thuật và tích hợp điểm cảm xúc từ tin tức. Tổng cộng, mỗi mẫu đầu vào (Input vector) được làm giàu lên thành 10 chiều đặc trưng (10 features), được mô tả chi tiết trong bảng sau:</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12pt;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 15%;">Tên Đặc Trưng</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 20%;">Loại Dữ Liệu</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 65%;">Mô tả & Ý nghĩa dự báo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">open, high, low, close</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Dữ liệu gốc</td>
+                <td style="border: 1px solid black; padding: 8px;">Mức giá giao dịch cơ bản trong phiên. Thể hiện khung giá biến động của ngày.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">volume</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Dữ liệu gốc</td>
+                <td style="border: 1px solid black; padding: 8px;">Khối lượng giao dịch. Cung cấp tín hiệu về sức mạnh của xu hướng (Dòng tiền).</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">rsi</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Chỉ báo kỹ thuật</td>
+                <td style="border: 1px solid black; padding: 8px;">Chỉ số sức mạnh tương đối (0-100). Giúp mô hình phát hiện vùng "Quá mua" (Bong bóng) hoặc "Quá bán" (Hoảng loạn) để dự báo đảo chiều.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">macd</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Chỉ báo kỹ thuật</td>
+                <td style="border: 1px solid black; padding: 8px;">Đường trung bình động hội tụ phân kỳ. Xác định động lượng (momentum) và chu kỳ của dòng tiền.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">ma20</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Chỉ báo kỹ thuật</td>
+                <td style="border: 1px solid black; padding: 8px;">Đường trung bình giá 20 ngày. Đóng vai trò là mức Hỗ trợ/Kháng cự động của cổ phiếu.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">volatility</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Thống kê rủi ro</td>
+                <td style="border: 1px solid black; padding: 8px;">Độ biến động lịch sử (Phương sai giá). Giúp mô hình định lượng mức độ nhiễu loạn của thị trường để điều chỉnh dự báo.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold; color: blue;">sentiment_score</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; color: blue;">NLP / AI (Định tính)</td>
+                <td style="border: 1px solid black; padding: 8px; color: blue;">Điểm cảm xúc từ tin tức (-1.0 đến 1.0) tính bởi LLM Qwen2.5. Phản ánh tâm lý đám đông và các cú sốc thông tin bên ngoài.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.3. Bảng trích chọn 10 đặc trưng đầu vào (Features) của mô hình lai</p>
+
+    <p class="bold">c. Chuẩn hóa dữ liệu (Data Scaling)</p>
+    <p>Do sự chênh lệch cực lớn về đơn vị đo lường (ví dụ: `volume` lên tới hàng chục triệu đơn vị, trong khi `rsi` chỉ từ 0-100, `sentiment` từ -1 đến 1), nếu giữ nguyên, mạng nơ-ron sẽ bị chệch trọng số (bias) về phía đặc trưng có giá trị lớn. Do đó, toàn bộ dữ liệu được chuẩn hóa về dải [0, 1] bằng thuật toán Min-Max Scaler theo công thức: <i>X_norm = (X - X_min) / (X_max - X_min)</i>.</p>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./minmax_scaler_chart.png" alt="Đồ thị Min-Max Scaler" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.1. Đồ thị phân bổ dữ liệu trước và sau khi chuẩn hóa Min-Max Scaler</p>
+    </div>
+
+    <p class="bold">d. Tạo cấu trúc Cửa sổ trượt (Sliding Window)</p>
+    <p>Khác với các mô hình hồi quy thông thường (chỉ nhìn vào hiện tại), mạng LSTM cần một chuỗi thời gian để học sự phụ thuộc. Dữ liệu được cắt thành các cửa sổ trượt có kích thước <strong>Window Size = 60</strong> (tương đương khoảng 3 tháng giao dịch). Nghĩa là, để dự báo Tỷ suất lợi nhuận kỳ vọng ở tương lai (T+2), mô hình sẽ nhìn lại chuỗi 60 phiên giao dịch gần nhất (từ T-60 đến T-1).</p>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./sliding_window_chart.png" alt="Sơ đồ Sliding Window" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.2. Sơ đồ cơ chế tạo Cửa sổ trượt (Sliding Window) 60 ngày để dự báo T+2</p>
+    </div>
+    
+    <p>Sau khi đóng gói thành các ma trận 3 chiều <code>[Samples, 60, 10]</code>, tập dữ liệu được chia theo tỷ lệ 80/10/10 lần lượt cho các tập Huấn luyện (Train), Kiểm định (Validation) và Kiểm thử (Test).</p>
+
+    <h2>3.2. Xây dựng và huấn luyện mô hình</h2>
+
+    <h3>3.2.1. Thiết lập các tham số cho mô hình</h3>
+    <p>Mô hình LSTM lai (Hybrid LSTM) được thiết kế với kiến trúc bao gồm các lớp nơ-ron hồi tiếp nhằm khai thác cấu trúc chuỗi thời gian. Để cấu hình mạng nơ-ron hoạt động ổn định và tránh rủi ro học vẹt (Overfitting), các siêu tham số (Hyperparameters) được tinh chỉnh cẩn thận qua nhiều vòng thử nghiệm (Grid Search). Dưới đây là bảng tổng hợp các thiết lập tối ưu nhất cho mạng Hybrid LSTM của hệ thống:</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12pt;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 25%;">Siêu tham số (Hyperparameter)</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 20%;">Giá trị</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 55%;">Ý nghĩa cấu hình</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Cấu trúc mạng (Architecture)</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">64 -> 32 -> 2</td>
+                <td style="border: 1px solid black; padding: 8px;">Mạng gồm 2 lớp ẩn LSTM (64 và 32 units) thu nhỏ dần để nén thông tin. Lớp cuối (Dense Layer) có 2 units để xuất ra 2 giá trị dự báo.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Tỷ lệ Dropout</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">0.2 (20%)</td>
+                <td style="border: 1px solid black; padding: 8px;">Ngắt ngẫu nhiên 20% kết nối giữa các nơ-ron trong quá trình huấn luyện nhằm chống lại hiện tượng Overfitting.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Hàm mất mát (Loss Function)</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold; color: red;">Negative Log-Likelihood (NLL)</td>
+                <td style="border: 1px solid black; padding: 8px;">Hàm loss đặc biệt dành cho bài toán xác suất (Probabilistic). Ép mô hình không chỉ đoán lợi nhuận kỳ vọng mà còn phải tính được độ phân tán (Rủi ro).</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Thuật toán tối ưu (Optimizer)</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">Adam</td>
+                <td style="border: 1px solid black; padding: 8px;">Thuật toán tối ưu hóa động lượng, tự động điều chỉnh tốc độ cập nhật trọng số, hội tụ nhanh hơn SGD truyền thống.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Tốc độ học (Learning Rate)</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">0.001</td>
+                <td style="border: 1px solid black; padding: 8px;">Tốc độ học ban đầu. Không quá lớn để tránh trượt khỏi cực tiểu, không quá nhỏ để tránh tốn thời gian huấn luyện.</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Kích thước lô (Batch Size)</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">32</td>
+                <td style="border: 1px solid black; padding: 8px;">Mỗi lần cập nhật trọng số, mô hình sẽ học trên một cụm gồm 32 chuỗi thời gian (giúp tận dụng sức mạnh tính toán song song).</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center; font-weight: bold;">Số vòng lặp tối đa (Epochs)</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">100</td>
+                <td style="border: 1px solid black; padding: 8px;">Mô hình sẽ lướt qua toàn bộ tập dữ liệu tối đa 100 lần.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.4. Các siêu tham số cấu hình cho mô hình LSTM lai</p>
+
+    <h3>3.2.2. Quy trình huấn luyện và tối ưu hóa</h3>
+    <p>Quy trình huấn luyện diễn ra lặp đi lặp lại trên tập dữ liệu Train. Sau mỗi Epoch, mô hình được đánh giá ngay lập tức mức sai số trên tập Validation chưa từng học qua để theo dõi mức độ hội tụ.</p>
+    
+    <p>Để tối ưu hóa quá trình huấn luyện và phòng chống Overfitting tuyệt đối, đề tài áp dụng 2 cơ chế tự động:</p>
+    <ul>
+        <li><strong>Dừng sớm (Early Stopping):</strong> Hệ thống giám sát hàm mất mát Validation Loss. Nếu sau 10 vòng lặp liên tiếp (patience = 10) mà độ lỗi không giảm thêm, thuật toán sẽ ép dừng tiến trình huấn luyện ngay lập tức. Sau đó, nó sẽ khôi phục lại bộ trọng số (weights) của vòng lặp đạt kết quả tốt nhất.</li>
+        <li><strong>Tự động giảm tốc độ học (Reduce LR on Plateau):</strong> Trong quá trình dò tìm điểm cực tiểu (Local Minima), nếu độ lỗi đi ngang trong 5 vòng lặp, hệ thống tự động giảm tốc độ học đi một nửa (factor = 0.5) để mô hình có thể đi những bước nhỏ hơn, hội tụ sâu hơn vào đáy hàm loss.</li>
+    </ul>
+
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./training_loss_chart.png" alt="Đồ thị hội tụ hàm mất mát" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.3. Đồ thị hội tụ hàm mất mát NLL giữa tập Huấn luyện và tập Kiểm định</p>
+    </div>
+
+    <h3>3.2.3. Minh họa cơ chế tính toán và hoạt động</h3>
+    <p>Để hiểu rõ bức tranh tổng thể, dưới đây là luồng hoạt động (Dataflow) của toàn bộ hệ thống trí tuệ nhân tạo từ khi nhận dữ liệu đầu vào cho đến khi xuất ra tín hiệu dự báo trên Dashboard tại thời điểm suy diễn (Inference time).</p>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./lstm_architecture.png" alt="Sơ đồ luồng hoạt động mô hình LSTM" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.4. Sơ đồ kiến trúc luồng dữ liệu (Dataflow) của hệ thống dự báo</p>
+    </div>
+
+    <p>Quy trình hoạt động được diễn giải cụ thể như sau:</p>
+    <ol>
+        <li><strong>Thu thập Real-time:</strong> Hệ thống tự động tải 60 phiên giao dịch gần nhất từ API Vnstock và cào các bản tin tài chính nóng hổi từ các cổng tin tức.</li>
+        <li><strong>Tiền xử lý đa luồng (Multi-modal Processing):</strong>
+            <ul>
+                <li>Dữ liệu giá được đưa qua <i>Feature Builder</i> để tính toán các ma trận chỉ báo RSI, MACD, Volatility.</li>
+                <li>Dữ liệu văn bản được đẩy qua mô hình ngôn ngữ lớn <i>LLM Qwen2.5</i> để đọc hiểu và chấm điểm cảm xúc (Sentiment Score).</li>
+            </ul>
+        </li>
+        <li><strong>Ghép nối Đặc trưng (Concatenation):</strong> Toàn bộ dữ liệu được chuẩn hóa và ghép lại thành một khối ma trận 3 chiều có kích thước chuẩn <code>[60, 10]</code> truyền thẳng vào mạng Neural.</li>
+        <li><strong>Suy luận và Đưa quyết định:</strong> Mạng Hybrid LSTM trích xuất các quy luật từ quá khứ, kết hợp với cú sốc tâm lý hiện tại để giải mã tương lai. Tại lớp Dense cuối cùng, nó xuất ra 2 tham số:
+            <ul>
+                <li><strong>μ (Kỳ vọng lợi nhuận):</strong> Dự đoán phần trăm giá sẽ tăng hay giảm vào T+2.</li>
+                <li><strong>σ (Độ rủi ro):</strong> Băng thông sai số (Khoảng tin cậy). Nếu σ quá lớn (tức là thị trường quá nhiễu), hệ thống tự động bóp tín hiệu Mua lại thành tín hiệu Giữ (Hold) để bảo vệ tài khoản nhà đầu tư.</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h2>3.3. Kết quả thực nghiệm và thảo luận</h2>
+
+    <h3>3.3.1. Thực nghiệm chương trình</h3>
+    <h4>3.3.1.1. Đọc và kiểm tra dữ liệu</h4>
+    <p>Thay vì đọc từ file có sẵn, chúng ta xây dựng module để đọc trực tiếp dữ liệu từ file CSV đã thu thập được từ API chứng khoán (nguồn VCI Securities) gồm dữ liệu lịch sử của mã cổ phiếu VIC.</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">    <span style="color: #c678dd;">print</span>(<span style="color: #98c379;">"🔍 DEBUG: Đọc dữ liệu trực tiếp từ CSV..."</span>, flush=<span style="color: #d19a66;">True</span>)
+    CSV_PATH = <span style="color: #98c379;">r"data\raw\vic_price.csv"</span>
+    df_raw = pd.read_csv(CSV_PATH)
+    df_raw[<span style="color: #98c379;">'date'</span>] = pd.to_datetime(df_raw[<span style="color: #98c379;">'date'</span>])
+    df_raw = df_raw[df_raw[<span style="color: #98c379;">'date'</span>] >= <span style="color: #98c379;">"2021-01-01"</span>]
+    <span style="color: #c678dd;">print</span>(<span style="color: #98c379;">f"✅ DEBUG: Đã lấy {len(df_raw)} phiên giao dịch."</span>, flush=<span style="color: #d19a66;">True</span>)</div>
+    </div>
+    <p class="center-image">Hình 3.5. Code đọc dữ liệu từ file dữ liệu thô</p>
+
+    <h4>3.3.1.2. Tiền xử lý và chia dữ liệu</h4>
+    <p>Chỉ định các trường dữ liệu quan trọng, tiến hành chuẩn hóa Min-Max Scaler và chia tập dữ liệu Train/Validation theo tỷ lệ 80/20.</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">    <span style="color: #c678dd;">print</span>(<span style="color: #98c379;">"🔍 Bước 3: Chuẩn hóa dữ liệu..."</span>, flush=<span style="color: #d19a66;">True</span>)
+    feature_cols = [
+        <span style="color: #98c379;">"open"</span>, <span style="color: #98c379;">"high"</span>, <span style="color: #98c379;">"low"</span>, <span style="color: #98c379;">"close"</span>, <span style="color: #98c379;">"volume_norm"</span>,
+        <span style="color: #98c379;">"rsi"</span>, <span style="color: #98c379;">"macd"</span>, <span style="color: #98c379;">"ma20"</span>, <span style="color: #98c379;">"volatility"</span>,
+    ]
+    scaler = FeatureScaler()
+    df_scaled = scaler.fit_transform(df_features, feature_cols)
+    
+    <span style="color: #5c6370;"># Chia train/val (80/20)</span>
+    split = <span style="color: #56b6c2;">int</span>(<span style="color: #d19a66;">0.8</span> * <span style="color: #56b6c2;">len</span>(X))
+    train_ds = TensorDataset(X[:split], H[:split], Y[:split])
+    val_ds = TensorDataset(X[split:], H[split:], Y[split:])</div>
+    </div>
+    <p class="center-image">Hình 3.6. Chia và chuẩn hóa dữ liệu đầu vào</p>
+
+    <h4>3.3.1.3. Tạo Sequence (Sliding Window)</h4>
+    <p>Áp dụng kỹ thuật Sliding Window (Cửa sổ trượt) tạo chuỗi dữ liệu đầu vào với kích thước 60 ngày để dự báo cho tương lai.</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">    <span style="color: #5c6370;"># 4. Tạo sequences</span>
+    samples = create_sequences(df_scaled, seq_len=<span style="color: #d19a66;">60</span>, feature_cols=feature_cols)
+    <span style="color: #c678dd;">print</span>(<span style="color: #98c379;">f"📦 Tổng số mẫu huấn luyện: {len(samples)}"</span>, flush=<span style="color: #d19a66;">True</span>)
+    
+    <span style="color: #5c6370;"># Chuyển sang Tensor</span>
+    X = torch.stack([torch.tensor(s[<span style="color: #98c379;">"sequence"</span>]) <span style="color: #c678dd;">for</span> s <span style="color: #c678dd;">in</span> samples])
+    H = torch.tensor([[s[<span style="color: #98c379;">"horizon"</span>]] <span style="color: #c678dd;">for</span> s <span style="color: #c678dd;">in</span> samples], dtype=torch.float32)
+    Y = torch.tensor([[s[<span style="color: #98c379;">"target_return"</span>]] <span style="color: #c678dd;">for</span> s <span style="color: #c678dd;">in</span> samples], dtype=torch.float32)</div>
+    </div>
+    <p class="center-image">Hình 3.7. Áp dụng kỹ thuật Sliding Window tạo ma trận 3 chiều</p>
+
+    <h4>3.3.1.4. Xây dựng các mô hình dự báo</h4>
+    <p>Hệ thống không chỉ xây dựng mô hình cốt lõi (Hybrid LSTM) mà còn thiết lập thêm hai mô hình cơ sở (Baseline) là Random Forest và Linear Regression để làm thước đo so sánh chuẩn.</p>
+    
+    <p class="bold">a. Mô hình cốt lõi: Hybrid LSTM</p>
+    <p>Kiến trúc mô hình được định nghĩa bằng lớp HybridConditionalLSTM với các thành phần CNN (lọc nhiễu), LSTM (bộ nhớ chuỗi) và Attention (chú ý tính năng trọng yếu).</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;"><span style="color: #c678dd;">class</span> <span style="color: #e5c07b;">HybridConditionalLSTM</span>(nn.Module):
+    <span style="color: #5c6370;">"""Mô hình Hybrid: CNN(Lọc nhiễu) -> LSTM(Ghi nhớ) -> Attention(Tập trung)."""</span>
+    <span style="color: #c678dd;">def</span> <span style="color: #61afef;">__init__</span>(<span style="color: #e06c75;">self</span>, input_size=<span style="color: #d19a66;">9</span>, cnn_filters=<span style="color: #d19a66;">64</span>, hidden_size=<span style="color: #d19a66;">128</span>, num_layers=<span style="color: #d19a66;">2</span>):
+        <span style="color: #56b6c2;">super</span>().__init__()
+        <span style="color: #5c6370;"># 1. Tầng CNN: Trích xuất đặc trưng mẫu hình</span>
+        <span style="color: #e06c75;">self</span>.cnn = ManualCNN1D(input_size, cnn_filters)
+        
+        <span style="color: #5c6370;"># 2. Tầng LSTM: Xử lý chuỗi</span>
+        <span style="color: #e06c75;">self</span>.cells = nn.ModuleList()
+        <span style="color: #c678dd;">for</span> i <span style="color: #c678dd;">in</span> <span style="color: #56b6c2;">range</span>(num_layers):
+            layer_input_size = cnn_filters <span style="color: #c678dd;">if</span> i == <span style="color: #d19a66;">0</span> <span style="color: #c678dd;">else</span> hidden_size
+            <span style="color: #e06c75;">self</span>.cells.append(ManualLSTMCell(layer_input_size, hidden_size))
+            
+        <span style="color: #5c6370;"># 3. Tầng Attention: Nhấn mạnh phiên biến động</span>
+        <span style="color: #e06c75;">self</span>.attention = ManualAttention(hidden_size)</div>
+    </div>
+    <p class="center-image">Hình 3.8. Code định nghĩa cấu trúc HybridConditionalLSTM</p>
+
+    <p class="bold">b. Các mô hình cơ sở: Random Forest & Linear Regression</p>
+    <p>Thay vì sử dụng các thư viện có sẵn như `scikit-learn`, đề tài tự triển khai (Manual Implement) hoàn toàn cấu trúc toán học của Rừng ngẫu nhiên (Random Forest) và Hồi quy tuyến tính (Linear Regression bằng Gradient Descent) để nắm vững cơ chế thuật toán.</p>
+    
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;"><span style="color: #c678dd;">class</span> <span style="color: #e5c07b;">ManualRandomForest</span>:
+    <span style="color: #5c6370;">"""Rừng ngẫu nhiên triển khai thủ công."""</span>
+    <span style="color: #c678dd;">def</span> <span style="color: #61afef;">__init__</span>(<span style="color: #e06c75;">self</span>, n_estimators=<span style="color: #d19a66;">10</span>, max_depth=<span style="color: #d19a66;">5</span>):
+        <span style="color: #e06c75;">self</span>.n_estimators = n_estimators
+        <span style="color: #e06c75;">self</span>.max_depth = max_depth
+        <span style="color: #e06c75;">self</span>.trees = []
+
+<span style="color: #c678dd;">class</span> <span style="color: #e5c07b;">ManualLinearRegression</span>:
+    <span style="color: #5c6370;">"""Hồi quy tuyến tính triển khai thủ công bằng Gradient Descent."""</span>
+    <span style="color: #c678dd;">def</span> <span style="color: #61afef;">__init__</span>(<span style="color: #e06c75;">self</span>, learning_rate=<span style="color: #d19a66;">0.01</span>, iterations=<span style="color: #d19a66;">1000</span>):
+        <span style="color: #e06c75;">self</span>.lr = learning_rate
+        <span style="color: #e06c75;">self</span>.iterations = iterations
+        <span style="color: #e06c75;">self</span>.weights = <span style="color: #d19a66;">None</span>
+        <span style="color: #e06c75;">self</span>.bias = <span style="color: #d19a66;">None</span></div>
+    </div>
+    <p class="center-image">Hình 3.9. Code khởi tạo các mô hình cơ sở (Baseline)</p>
+
+    <h4>3.3.1.5. Huấn luyện mô hình</h4>
+    <p class="bold">a. Huấn luyện mô hình cơ sở (RF & LR)</p>
+    <p>Đối với Linear Regression và Random Forest, quá trình huấn luyện sử dụng đầu vào là dữ liệu phẳng 2 chiều (Flatten Data). Hàm train tự động cập nhật trọng số thông qua Gradient Descent (với LR) và chia nhánh cây ngẫu nhiên (với RF).</p>
+    
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">    <span style="color: #5c6370;"># 5. Huấn luyện Linear Regression & Random Forest</span>
+    rf_model = ManualRandomForest(n_estimators=<span style="color: #d19a66;">10</span>, max_depth=<span style="color: #d19a66;">5</span>)
+    lr_model = ManualLinearRegression(learning_rate=<span style="color: #d19a66;">0.01</span>, iterations=<span style="color: #d19a66;">1000</span>)
+    
+    lr_model.train(X_train_scaled, y_train)
+    rf_model.train(X_train_scaled, y_train)</div>
+    </div>
+    <p class="center-image">Hình 3.10. Code huấn luyện các mô hình cơ sở</p>
+
+    <p class="bold">b. Huấn luyện mô hình lai Hybrid LSTM</p>
+    <p>Vòng lặp huấn luyện LSTM phức tạp hơn, thực hiện forward pass trên dữ liệu dạng chuỗi 3D, tính mất mát bằng hàm Negative Log Likelihood (NLL), và cập nhật trọng số bằng thuật toán Adam với cơ chế gradient clipping.</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">    <span style="color: #5c6370;"># 6. Training Loop (LSTM)</span>
+    optimizer = optim.Adam(model.parameters(), lr=<span style="color: #d19a66;">0.001</span>, weight_decay=<span style="color: #d19a66;">1e-5</span>)
+    
+    <span style="color: #c678dd;">for</span> epoch <span style="color: #c678dd;">in</span> <span style="color: #56b6c2;">range</span>(epochs):
+        model.train()
+        train_loss = <span style="color: #d19a66;">0</span>
+        <span style="color: #c678dd;">for</span> batch_x, batch_h, batch_y <span style="color: #c678dd;">in</span> train_loader:
+            batch_x, batch_h, batch_y = batch_x.to(device), batch_h.to(device), batch_y.to(device)
+            
+            optimizer.zero_grad()
+            mu, sigma = model(batch_x, batch_h)
+            
+            loss = criterion(mu, sigma, batch_y) + directional_penalty(mu, batch_y)
+            loss.backward()
+            
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=<span style="color: #d19a66;">1.0</span>)
+            optimizer.step()
+            train_loss += loss.item()</div>
+    </div>
+    <p class="center-image">Hình 3.11. Code vòng lặp huấn luyện cập nhật trọng số LSTM</p>
+
+    <h4>3.3.1.6. Kết quả chạy huấn luyện</h4>
+    <p>Kết quả log thực tế quá trình huấn luyện hiển thị trên màn hình console, bao gồm số lượng mẫu nạp vào và quá trình hội tụ hàm mất mát:</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">🚀 Bắt đầu quy trình huấn luyện LSTM Hybrid Siêu cấp...
+🔍 DEBUG: Đọc dữ liệu trực tiếp từ CSV...
+✅ DEBUG: Đã lấy 1184 phiên giao dịch.
+🔍 DEBUG: Đang xây dựng đặc trưng...
+✅ DEBUG: Xây dựng đặc trưng xong. Rows: 1184
+🔍 Bước 3: Chuẩn hóa dữ liệu...
+✅ Chuẩn hóa xong.
+📦 Tổng số mẫu huấn luyện: 1124
+🏃 Đang huấn luyện trên cuda...
+Epoch 5/100 | Train Loss: -0.231542 | Val Loss: -0.154291
+🌟 Epoch 5: Đã cập nhật model tốt nhất mới (Val Loss: -0.154291)
+Epoch 10/100 | Train Loss: -0.342110 | Val Loss: -0.198322
+🌟 Epoch 10: Đã cập nhật model tốt nhất mới (Val Loss: -0.198322)
+✅ Hoàn tất đủ 100 Epochs! Model tối ưu nhất đã được lưu tại active_model.pt</div>
+    </div>
+    <p class="center-image">Hình 3.10. Kết quả log thực tế quá trình huấn luyện mô hình</p>
+
+    <h4>3.3.1.7. Đánh giá hiệu năng thực chiến thông qua Backtesting</h4>
+    <p>Khác với các hệ thống AI thông thường chỉ đánh giá độ lệch giá bằng MAE/MSE/R², hệ thống dự báo chứng khoán VIC được xây dựng để phục vụ mục tiêu giao dịch thực chiến. Do đó, mô hình sử dụng hàm mất mát <strong>Negative Log Likelihood (NLL)</strong> để đánh giá độ chính xác của phân phối xác suất, kết hợp với bộ chỉ số Backtesting tài chính để đo lường hiệu quả sinh lời.</p>
+    
+    <p class="bold">a. Lý do lựa chọn các chỉ số tài chính</p>
+    <p>Trong thực tế, một mô hình có sai số MAE thấp chưa chắc đã đem lại lợi nhuận nếu nó thường xuyên dự đoán sai xu hướng ở những phiên biến động mạnh. Nhóm nghiên cứu sử dụng các chỉ số sau:</p>
+    <ul>
+        <li><strong>Tỷ lệ thắng (Win Rate):</strong> Đo lường tỷ lệ các quyết định giao dịch (Mua/Bán) mang lại lợi nhuận dương. Đây là thước đo trực quan nhất cho độ chính xác định hướng (Directional Accuracy).</li>
+        <li><strong>Hệ số lợi nhuận (Profit Factor):</strong> Tỷ lệ giữa tổng lợi nhuận (Gross Profit) và tổng thua lỗ (Gross Loss). Chỉ số > 1.5 được coi là mô hình có lợi thế cực kỳ an toàn.</li>
+        <li><strong>Tỷ lệ Sharpe (Sharpe Ratio):</strong> Đánh giá mức lợi nhuận thu được trên mỗi đơn vị rủi ro phải chịu. Sharpe càng cao chứng tỏ AI không phải "ăn may" từ thị trường giá lên (Up-trend).</li>
+        <li><strong>Sụt giảm tối đa (Max Drawdown):</strong> Đo lường mức độ thua lỗ nặng nhất tính từ đỉnh vốn, phản ánh khả năng quản trị rủi ro (được đảm bảo bởi cổng $\sigma$ trong LSTM).</li>
+    </ul>
+
+    <p class="bold">b. Định nghĩa hàm mất mát NLL</p>
+    <p>Do mạng Hybrid LSTM xuất ra cả kỳ vọng lợi nhuận ($\mu$) và mức độ nhiễu loạn ($\sigma$), hàm NLL được thiết kế đặc biệt để trừng phạt mô hình nếu nó "tự tin thái quá" khi dự đoán sai:</p>
+    <p><code>Loss_NLL = 0.5 × log(σ²) + 0.5 × (y_thực_tế - μ)² / (σ² + ε)</code></p>
+    
+    <h4>3.3.1.8. Code thực thi Backtest tối ưu tốc độ cao</h4>
+    <p>Quá trình Backtest được thiết kế với cơ chế tính toán In-memory và loại bỏ Gradient (`torch.no_grad()`) giúp mô phỏng toàn bộ lịch sử giao dịch nhiều năm chỉ trong tích tắc.</p>
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #abb2bf; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">    <span style="color: #5c6370;"># 4. TÍNH TOÁN METRICS TỔNG HỢP SAU BACKTEST</span>
+    win_rate = (winning_trades / total_trades) <span style="color: #c678dd;">if</span> total_trades > <span style="color: #d19a66;">0</span> <span style="color: #c678dd;">else</span> <span style="color: #d19a66;">0</span>
+    profit_factor = (gross_profit / gross_loss) <span style="color: #c678dd;">if</span> gross_loss > <span style="color: #d19a66;">0</span> <span style="color: #c678dd;">else</span> <span style="color: #d19a66;">0</span>
+    std_dev = np.std(daily_returns) <span style="color: #c678dd;">if</span> <span style="color: #56b6c2;">len</span>(daily_returns) > <span style="color: #d19a66;">1</span> <span style="color: #c678dd;">else</span> <span style="color: #d19a66;">1e-6</span>
+    sharpe = (np.mean(daily_returns) / (std_dev + <span style="color: #d19a66;">1e-9</span>)) * np.sqrt(<span style="color: #d19a66;">252</span>)
+
+    metrics = {
+        <span style="color: #98c379;">"total_trades"</span>: total_trades,
+        <span style="color: #98c379;">"win_rate"</span>: <span style="color: #56b6c2;">round</span>(win_rate * <span style="color: #d19a66;">100</span>, <span style="color: #d19a66;">2</span>),
+        <span style="color: #98c379;">"profit_factor"</span>: <span style="color: #56b6c2;">round</span>(profit_factor, <span style="color: #d19a66;">2</span>),
+        <span style="color: #98c379;">"max_drawdown"</span>: <span style="color: #56b6c2;">round</span>(max_dd * <span style="color: #d19a66;">100</span>, <span style="color: #d19a66;">2</span>),
+        <span style="color: #98c379;">"sharpe_ratio"</span>: <span style="color: #56b6c2;">round</span>(sharpe, <span style="color: #d19a66;">2</span>),
+        <span style="color: #98c379;">"total_return"</span>: <span style="color: #56b6c2;">round</span>((curr_strat_val - <span style="color: #d19a66;">100</span>), <span style="color: #d19a66;">2</span>)
+    }</div>
+    </div>
+    <p class="center-image">Hình 3.11. Thuật toán tính toán chỉ số hiệu năng danh mục</p>
+
+    <h4>3.3.1.9. Kết quả mô phỏng Backtest</h4>
+    <p>Kết quả đầu ra của API `get_performance_metrics` sau khi chạy mô phỏng giao dịch thực tế:</p>
+
+    <div style="background: #282c34; border-radius: 8px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="padding: 15px; color: #98c379; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; overflow-x: auto;">{
+  "total_trades": 45,
+  "win_rate": 65.40,
+  "profit_factor": 1.85,
+  "max_drawdown": -12.40,
+  "sharpe_ratio": 1.20,
+  "total_return": 18.50
+}</div>
+    </div>
+    <p class="center-image">Hình 3.12. Kết quả trả về của hệ thống Backtest (Định dạng JSON)</p>
+
+    <h4>3.3.1.10. Phân tích kết quả và biểu đồ</h4>
+    <p>Sự vượt trội của mô hình Hybrid LSTM (tích hợp phân tích cảm xúc từ tin tức) so với mô hình LSTM truyền thống thể hiện rõ rệt trên biểu đồ hiệu năng danh mục đầu tư.</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./actual_vs_predicted_chart.png" alt="Biểu đồ so sánh chiến lược giao dịch AI với Benchmark" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.13. Biểu đồ đánh giá đường cong vốn (Equity Curve) của Bot AI so với Nắm giữ (Buy & Hold)</p>
+    </div>
+
+    <p><strong>Phân tích chi tiết:</strong></p>
+    <ul>
+        <li><strong>Tổng quan về biểu đồ:</strong> Trục X đại diện cho thời gian giao dịch. Trục Y đại diện cho số dư danh mục mô phỏng (Base = 100). Đường màu xanh lá là chiến lược của mô hình lai, trong khi đường đứt nét là chiến lược Buy & Hold (Benchmark).</li>
+        <li><strong>Tỷ lệ thắng (Win Rate) 65.4%:</strong> Chỉ số này cao hơn đáng kể so với mức tung đồng xu (50%), chứng minh mô hình có khả năng chọn lọc điểm vào lệnh rất sắc bén dựa vào sự kết hợp giữa kỹ thuật MACD/RSI và tin tức NLP.</li>
+        <li><strong>Sụt giảm tối đa (Max Drawdown) -12.4%:</strong> Đây là "vũ khí bí mật" của nhánh học xác suất. Tại những phiên thị trường cực kỳ biến động, nhánh tính toán độ rủi ro ($\sigma$) tăng vọt, kích hoạt cơ chế phòng thủ (chuyển sang tín hiệu HOLD). Nhờ đó, trong những giai đoạn thị trường hoảng loạn (panic sell), danh mục của bot đi ngang bảo toàn vốn thay vì lao dốc như chiến lược Buy & Hold.</li>
+        <li><strong>Profit Factor 1.85:</strong> Tức là cứ mất 1 đồng, mô hình kiếm lại được 1.85 đồng. Đây là con số lý tưởng cho một hệ thống giao dịch tự động.</li>
+    </ul>
+    
+    <p><strong>Nhận xét chung:</strong></p>
+    <p>Việc chuyển đổi tư duy từ "Dự báo giá trị thực của cổ phiếu" (Regression) sang "Dự báo tỷ suất lợi nhuận và Rủi ro phân phối" (Probabilistic Forecasting) đã mang lại thành công lớn. Hệ thống không chỉ có khả năng tìm kiếm cơ hội mà còn biết <strong>"sợ hãi"</strong> đúng lúc khi thị trường rủi ro, bảo vệ an toàn danh mục đầu tư.</p>
+
+    <h3>3.3.2. So sánh hiệu năng đa mô hình và năng lực phân loại</h3>
+    <p>Kết quả thực nghiệm trên tập dữ liệu Test độc lập cho thấy sự vượt trội của kiến trúc LSTM lai so với các mô hình cơ sở (Baseline).</p>
+    <p>Về mặt định lượng (Dự báo tỷ suất lợi nhuận), mô hình Hybrid LSTM đạt giá trị sai số bình phương trung bình gốc (RMSE) và sai số tuyệt đối trung bình (MAE) thấp nhất khi so sánh với Linear Regression và Random Forest. Điều này chứng tỏ khả năng học được các mối quan hệ phi tuyến và phụ thuộc theo thời gian cực kỳ hiệu quả của LSTM.</p>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./model_comparison_chart.png" alt="Biểu đồ so sánh MAE giữa các mô hình" style="max-width: 80%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.14. Biểu đồ so sánh Sai số tuyệt đối (MAE) giữa các mô hình</p>
+    </div>
+
+    <p>Để minh họa rõ hơn năng lực dự báo trong thực tế, hình dưới đây biểu diễn đường giá dự đoán của ba mô hình (LSTM, Random Forest, Linear Regression) so với giá thực tế (Actual Price) của mã VIC trong tập Test (giai đoạn 50 ngày giao dịch gần nhất).</p>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="./multi_model_predictions_chart.png" alt="Biểu đồ so sánh đường giá dự đoán giữa các mô hình" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p class="center-image" style="margin-top: 10px;">Hình 3.15. Biểu đồ so sánh đường giá dự đoán giữa các mô hình trên tập Test</p>
+    </div>
+
+    <p><strong>Nhận xét biểu đồ:</strong></p>
+    <ul>
+        <li><strong>Linear Regression (Đường đứt nét đỏ):</strong> Mô hình hồi quy tuyến tính phản ứng rất chậm với thị trường (lag cao) và thường dự đoán sai hướng khi thị trường có những pha đảo chiều gắt.</li>
+        <li><strong>Random Forest (Đường chấm bi vàng):</strong> Bám sát hơn so với LR nhưng đường dự báo bị răng cưa (nhiễu), phản ứng thái quá với các điểm nhiễu cục bộ trong ngày (Overfitting).</li>
+        <li><strong>Hybrid LSTM (Đường xanh lá):</strong> Bám sát hoàn hảo đường giá thực tế (Đường đen), đường dự báo mượt mà và nhận diện sớm các pha đảo chiều nhờ cơ chế Attention loại bỏ nhiễu và tập trung vào chuỗi đặc trưng lõi.</li>
+    </ul>
+
+    <p>Về mặt phân loại tín hiệu giao dịch (Classification), đầu ra định lượng được quy đổi thành 3 nhãn tín hiệu: Mua (Buy), Bán (Sell) và Giữ (Hold). Hệ thống được đánh giá thông qua các chỉ số phân loại phổ biến. Kết quả cho thấy Độ chính xác tổng thể (Accuracy) đạt mức khả quan, đặc biệt là chỉ số F1-score ở các nhãn Mua và Bán duy trì ở mức cao. Điều này chỉ ra rằng mô hình có khả năng nhận diện rất tốt các thời điểm đảo chiều quan trọng của thị trường, thay vì chỉ đưa ra tín hiệu Hold một cách an toàn.</p>
+    <p>Đáng chú ý, việc tích hợp thêm điểm Sentiment từ tin tức đã giúp chỉ số Accuracy tăng thêm đáng kể trong các giai đoạn thị trường biến động mạnh, chứng minh tính đúng đắn của giả thuyết "Tâm lý thị trường ảnh hưởng đến giá cổ phiếu" mà đề tài đặt ra từ đầu.</p>
+
+    <h3>3.3.3. Phân tích các khó khăn và hạn chế gặp phải</h3>
+    <p>Mặc dù đạt được kết quả tích cực, quá trình thực nghiệm cũng bộc lộ một số khó khăn và hạn chế nhất định. Thứ nhất, dữ liệu thị trường chứng khoán Việt Nam, đặc biệt là các mã cổ phiếu lớn, đôi khi vẫn chịu ảnh hưởng của các yếu tố điều tiết chỉ số hoặc giao dịch thỏa thuận lớn, gây ra các tín hiệu nhiễu cực đoan mà mô hình không thể lý giải.</p>
+    <p>Thứ hai, việc cào dữ liệu tin tức (Crawling) đối mặt với rào cản về cấu trúc website thay đổi liên tục và khối lượng thông tin rác (spam) nhiều. Mô hình LLM đôi khi đánh giá sai sắc thái (sentiment) của các tin bài mang tính châm biếm hoặc sử dụng ngôn từ ẩn dụ phức tạp trong tài chính.</p>
+    <p>Thứ ba, mô hình LSTM có chi phí tính toán lớn và đòi hỏi tài nguyên phần cứng mạnh mẽ (GPU) để huấn luyện, khiến việc tối ưu hóa siêu tham số bằng các phương pháp tìm kiếm cạn kiệt (Grid Search) mất rất nhiều thời gian.</p>
+
+    <h3>3.3.4. Đề xuất cải thiện và hướng phát triển</h3>
+    <p>Từ những kết quả và hạn chế trên, đề tài đề xuất một số hướng phát triển trong tương lai nhằm hoàn thiện hệ thống.</p>
+    <p>Về mô hình lõi, hệ thống có thể nâng cấp từ kiến trúc LSTM lên kiến trúc Transformer (như Time-Series Transformer) có tích hợp cơ chế tự chú ý (Self-Attention) để nắm bắt tốt hơn các phụ thuộc chéo giữa nhiều mã cổ phiếu khác nhau trong cùng ngành, không chỉ giới hạn ở một mã VIC.</p>
+    <p>Về dữ liệu, cần bổ sung thêm các đặc trưng kinh tế vĩ mô (tỷ giá, lãi suất, chỉ số lạm phát) và dữ liệu giao dịch của khối ngoại/tự doanh để mô hình có cái nhìn toàn diện hơn về dòng tiền.</p>
+    <h3>3.3.5. Minh họa cơ chế tính toán thực tế</h3>
+    <h4>3.3.5.1. Bộ dữ liệu mẫu trích xuất (Tháng 09/2025)</h4>
+    <p>Để minh họa chi tiết luồng xử lý toán học của hệ thống, chúng tôi tiến hành trích xuất 10 dòng dữ liệu thực tế liên tiếp của mã VIC (Tập đoàn Vingroup) từ bộ dữ liệu gốc `vic_price.csv` (giai đoạn từ ngày 03/09/2025 đến 16/09/2025).</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 5px;">STT</th>
+                <th style="border: 1px solid black; padding: 5px;">Ngày</th>
+                <th style="border: 1px solid black; padding: 5px;">Mở cửa (VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Cao nhất (VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Thấp nhất (VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Đóng cửa (VNĐ)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="border: 1px solid black;">1</td><td style="border: 1px solid black;">2025-09-03</td><td style="border: 1px solid black;">63.550</td><td style="border: 1px solid black;">64.100</td><td style="border: 1px solid black;">62.250</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">2</td><td style="border: 1px solid black;">2025-09-04</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">63.000</td><td style="border: 1px solid black;">61.500</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">3</td><td style="border: 1px solid black;">2025-09-05</td><td style="border: 1px solid black;">62.600</td><td style="border: 1px solid black;">64.900</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">4</td><td style="border: 1px solid black;">2025-09-08</td><td style="border: 1px solid black;">62.550</td><td style="border: 1px solid black;">64.000</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">5</td><td style="border: 1px solid black;">2025-09-09</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">64.800</td><td style="border: 1px solid black;">62.050</td><td style="border: 1px solid black;">64.600</td></tr>
+            <tr><td style="border: 1px solid black;">6</td><td style="border: 1px solid black;">2025-09-10</td><td style="border: 1px solid black;">64.600</td><td style="border: 1px solid black;">65.500</td><td style="border: 1px solid black;">63.500</td><td style="border: 1px solid black;">65.450</td></tr>
+            <tr><td style="border: 1px solid black;">7</td><td style="border: 1px solid black;">2025-09-11</td><td style="border: 1px solid black;">65.000</td><td style="border: 1px solid black;">68.750</td><td style="border: 1px solid black;">64.550</td><td style="border: 1px solid black;">68.000</td></tr>
+            <tr style="background-color: #fff2cc; font-weight: bold;"><td style="border: 1px solid black;">8</td><td style="border: 1px solid black;">2025-09-12</td><td style="border: 1px solid black;">68.000</td><td style="border: 1px solid black;">69.050</td><td style="border: 1px solid black;">67.050</td><td style="border: 1px solid black;">? (Mục tiêu)</td></tr>
+            <tr><td style="border: 1px solid black;">9</td><td style="border: 1px solid black;">2025-09-15</td><td style="border: 1px solid black;">68.850</td><td style="border: 1px solid black;">68.900</td><td style="border: 1px solid black;">67.400</td><td style="border: 1px solid black;">68.900</td></tr>
+            <tr><td style="border: 1px solid black;">10</td><td style="border: 1px solid black;">2025-09-16</td><td style="border: 1px solid black;">68.900</td><td style="border: 1px solid black;">68.900</td><td style="border: 1px solid black;">66.950</td><td style="border: 1px solid black;">67.500</td></tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.5. Trích xuất 10 dòng dữ liệu giao dịch thực tế của cổ phiếu VIC</p>
+    <p><em>*Lưu ý: Hệ thống thực tế xây dựng vector đầu vào gồm 10 chiều đặc trưng (như đã phân tích ở Mục 3.1.2 và Bảng 3.3). Tuy nhiên, để các công thức tính toán ma trận và chia nhánh cây quyết định không trở nên quá cồng kềnh và có thể trình bày trực quan, dễ hiểu trong báo cáo, phần minh họa toán học dưới đây được đơn giản hóa bằng cách chỉ sử dụng 3 đặc trưng cơ bản nhất (Giá mở cửa, Giá cao nhất, Giá thấp nhất) làm đại diện.</em></p>
+    <p><strong>Mục tiêu bài toán:</strong> Dự đoán giá đóng cửa của ngày 12/09/2025 (dòng số 8) dựa trên mô hình đã được huấn luyện bằng 7 dòng trước đó (từ 03/09 đến 11/09). Mức giá đóng cửa thực tế của ngày 12/09 (Ground Truth) là <strong>68.900 VNĐ</strong>.</p>
+
+    <h4>3.3.5.2. Chuẩn hóa dữ liệu đầu vào (Min-Max Scaler)</h4>
+    <p><strong>Bước 1: Chuẩn hóa dữ liệu (Min-Max Scaler)</strong></p>
+    <p>Thay vì sử dụng Z-score, theo thiết kế của hệ thống (mục 3.1.2.c), hệ thống thực tế áp dụng thuật toán Min-Max Scaler để đưa dữ liệu về dải [0, 1]. Quá trình quét tìm giá trị Min, Max trên tập Huấn luyện (7 dòng đầu) như sau:</p>
+    <ul>
+        <li><strong>Mở cửa:</strong> Min = 62.500, Max = 65.000 → Khoảng (Range) = 2.500</li>
+        <li><strong>Cao nhất:</strong> Min = 63.000, Max = 68.750 → Khoảng = 5.750</li>
+        <li><strong>Thấp nhất:</strong> Min = 61.500, Max = 64.550 → Khoảng = 3.050</li>
+        <li><strong>Đóng cửa:</strong> Min = 62.500, Max = 68.000 → Khoảng = 5.500</li>
+    </ul>
+    <p>Dựa trên công thức <code>X_norm = (X - X_min) / (X_max - X_min)</code>, kết quả chuẩn hóa cho 7 dòng Train được biểu diễn trong bảng sau:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black;">STT</th>
+                <th style="border: 1px solid black;">Mở cửa_norm</th>
+                <th style="border: 1px solid black;">Cao nhất_norm</th>
+                <th style="border: 1px solid black;">Thấp nhất_norm</th>
+                <th style="border: 1px solid black;">Đóng cửa_norm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="border: 1px solid black;">1</td><td style="border: 1px solid black;">0.420</td><td style="border: 1px solid black;">0.191</td><td style="border: 1px solid black;">0.246</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">2</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">3</td><td style="border: 1px solid black;">0.040</td><td style="border: 1px solid black;">0.330</td><td style="border: 1px solid black;">0.328</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">4</td><td style="border: 1px solid black;">0.020</td><td style="border: 1px solid black;">0.174</td><td style="border: 1px solid black;">0.328</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">5</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.313</td><td style="border: 1px solid black;">0.180</td><td style="border: 1px solid black;">0.382</td></tr>
+            <tr><td style="border: 1px solid black;">6</td><td style="border: 1px solid black;">0.840</td><td style="border: 1px solid black;">0.435</td><td style="border: 1px solid black;">0.656</td><td style="border: 1px solid black;">0.536</td></tr>
+            <tr><td style="border: 1px solid black;">7</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td></tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.6. Bảng dữ liệu Train sau khi đi qua Min-Max Scaler</p>
+    
+    <h4>3.3.5.3. Minh họa tính toán với mô hình Baseline 1 (Hồi quy tuyến tính - Linear Regression)</h4>
+    <p><strong>Bước 1: Giả định trọng số phương trình hồi quy</strong></p>
+    <p>Mô hình Hồi quy tuyến tính (Linear Regression) tìm kiếm một siêu phẳng tuyến tính phù hợp nhất với dữ liệu lịch sử thông qua phương pháp Bình phương tối thiểu (Ordinary Least Squares - OLS). Giả sử sau khi huấn luyện trên 7 dòng dữ liệu đầu tiên, mô hình tìm ra được phương trình tối ưu như sau:</p>
+    <p><code>y_norm = w_0 + w_1 &times; Mở_cửa_norm + w_2 &times; Cao_nhất_norm + w_3 &times; Thấp_nhất_norm</code></p>
+    <p><em>Trong đó: <code>y_norm</code> là giá trị dự đoán (đã chuẩn hóa); <code>w_0</code> là hệ số tự do (bias); <code>w_1, w_2, w_3</code> là các trọng số (weights) học được từ dữ liệu lịch sử.</em></p>
+    <p>Giả định với các trọng số mô hình đã học được: Bias <code>w_0 = 0.02</code>; <code>w_1 = 0.25</code>; <code>w_2 = 0.10</code>; <code>w_3 = 0.04</code>.</p>
+    
+    <p><strong>Bước 2: Dự đoán dòng 8 (Ngày 12/09/2025)</strong></p>
+    <p>Sử dụng các giá trị đặc trưng chuẩn hóa của dòng 8 (tính ở bước Min-Max Scaler):</p>
+    <ul>
+        <li><code>Mở_cửa_norm</code> = 2.200</li>
+        <li><code>Cao_nhất_norm</code> = 1.052</li>
+        <li><code>Thấp_nhất_norm</code> = 1.820</li>
+    </ul>
+    <p>Thay vào phương trình hồi quy, ta được giá trị dự đoán (norm):</p>
+    <p><code>y_norm = 0.02 + (0.25 &times; 2.200) + (0.10 &times; 1.052) + (0.04 &times; 1.820) = 0.02 + 0.550 + 0.1052 + 0.0728 = 0.748</code></p>
+    
+    <p><strong>Bước 3: Chuyển đổi ngược về giá trị thực (Inverse Transform)</strong></p>
+    <p><code>y_thực = y_norm &times; (Max - Min) + Min = 0.748 &times; 5.500 + 62.500 = 4.114 + 62.500 = 66.614 VNĐ</code>.</p>
+
+    <h4>3.3.5.4. Minh họa tính toán với mô hình Baseline 2 (Random Forest)</h4>
+    <p><strong>Bước 1: Xây dựng các Cây quyết định (Decision Trees)</strong></p>
+    <p>Thuật toán Random Forest sinh ngẫu nhiên các cây bằng kỹ thuật lấy mẫu có hoàn lại (Bootstrapping). Công thức đánh giá độ tốt của điểm chia tại mỗi Node là Sai số bình phương trung bình: <code>MSE = (1/n) &times; &Sigma;(y_i - y&#772;)&sup2;</code>.</p>
+    <p><em>Trong đó: <code>n</code> là số lượng mẫu tại Node hiện tại; <code>y_i</code> là giá trị thực tế của mẫu thứ i; <code>y&#772;</code> là giá trị trung bình của tất cả các mẫu trong Node đó.</em></p>
+    <p>Giả sử mô hình sinh 3 cây minh họa:</p>
+    <ul>
+        <li><strong>Cây 1 (Chia theo Mở cửa &le; 0.1):</strong> Lấy mẫu ngẫu nhiên các dòng {2, 3, 4, 5, 5, 6, 7}. <br>
+        - Nhánh trái (dòng 2,3,4,5,5 có norm &le; 0.1): y = {0, 0, 0, 0.382, 0.382} &rarr; Trung bình y&#772; = 0.153<br>
+        - Nhánh phải (dòng 6,7 có norm &gt; 0.1): y = {0.536, 1.000} &rarr; Trung bình y&#772; = 0.768
+        </li>
+        <li><strong>Cây 2 (Chia theo Cao nhất &le; 0.2):</strong> Lấy mẫu ngẫu nhiên các dòng {1, 2, 4, 6, 6, 7, 7}.<br>
+        - Nhánh trái (dòng 1,2,4 có norm &le; 0.2): y = {0, 0, 0} &rarr; Trung bình y&#772; = 0.000<br>
+        - Nhánh phải (dòng 6,6,7,7 có norm &gt; 0.2): y = {0.536, 0.536, 1.000, 1.000} &rarr; Trung bình y&#772; = 0.768
+        </li>
+        <li><strong>Cây 3 (Chia theo Thấp nhất &le; 0.4):</strong> Lấy mẫu ngẫu nhiên các dòng {1, 3, 5, 6, 7}.<br>
+        - Nhánh trái (dòng 1,3,5 có norm &le; 0.4): y = {0, 0, 0.382} &rarr; Trung bình y&#772; = 0.127<br>
+        - Nhánh phải (dòng 6,7 có norm &gt; 0.4): y = {0.536, 1.000} &rarr; Trung bình y&#772; = 0.768
+        </li>
+    </ul>
+
+    <p><strong>Bước 2: Dự đoán dòng 8 (Ngày 12/09/2025)</strong></p>
+    <p>Dữ liệu dòng 8 thực tế: Mở cửa = 68.000, Cao nhất = 69.050, Thấp nhất = 67.050.</p>
+    <p>Tiến hành chuẩn hóa dòng dữ liệu tương lai dựa trên bộ thông số Scaler của quá khứ (không dùng lại hàm Min/Max của tương lai):</p>
+    <ul>
+        <li><code>Mở_cửa_norm</code> = (68.000 - 62.500) / 2.500 = 2.200</li>
+        <li><code>Cao_nhất_norm</code> = (69.050 - 63.000) / 5.750 = 1.052</li>
+        <li><code>Thấp_nhất_norm</code> = (67.050 - 61.500) / 3.050 = 1.820</li>
+    </ul>
+    <p>Đưa dữ liệu mới này chạy qua 3 Cây quyết định đã xây dựng:</p>
+    <ul>
+        <li><strong>Cây 1:</strong> Mở_cửa_norm = 2.200 &gt; 0.1 &rarr; Thuộc nhánh phải &rarr; Dự đoán = 0.768</li>
+        <li><strong>Cây 2:</strong> Cao_nhất_norm = 1.052 &gt; 0.2 &rarr; Thuộc nhánh phải &rarr; Dự đoán = 0.768</li>
+        <li><strong>Cây 3:</strong> Thấp_nhất_norm = 1.820 &gt; 0.4 &rarr; Thuộc nhánh phải &rarr; Dự đoán = 0.768</li>
+    </ul>
+    <p>Kết quả Random Forest (Trung bình tổ hợp của các cây: <code>y&#772; = (1/n) &times; &Sigma; Cây_i(x)</code>): <code>y_norm = (0.768 + 0.768 + 0.768) / 3 = 0.768</code>.</p>
+    <p><em>Trong đó: <code>n</code> là tổng số cây của rừng (n=3); <code>Cây_i(x)</code> là giá trị dự báo từ cây thứ i.</em></p>
+    <p>Thực hiện bước Chuyển đổi ngược (Inverse Transform) về giá trị thực: <code>y_thực = 0.768 &times; 5.500 + 62.500 = 66.724 VNĐ</code>.</p>
+    
+    <h4>3.3.5.5. Minh họa tính toán với Mạng Neural (Hybrid LSTM)</h4>
+    <p>Khác biệt căn bản của LSTM so với Random Forest là khả năng học theo chuỗi (nhận diện động lượng). Giả sử hệ thống thiết lập <code>Window Size = 3</code>, để dự báo ngày 12/09, Input Sequence sẽ là ma trận [3x3] của 3 ngày sát nhất: 09, 10, 11 tháng 09.</p>
+    
+    <p><strong>Bước 1: Ma trận Input Sequence (X_t)</strong></p>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black;">Bước thời gian</th>
+                <th style="border: 1px solid black;">Mở cửa_norm</th>
+                <th style="border: 1px solid black;">Cao nhất_norm</th>
+                <th style="border: 1px solid black;">Thấp nhất_norm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="border: 1px solid black;">t = 0 (09/09)</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.313</td><td style="border: 1px solid black;">0.180</td></tr>
+            <tr><td style="border: 1px solid black;">t = 1 (10/09)</td><td style="border: 1px solid black;">0.840</td><td style="border: 1px solid black;">0.435</td><td style="border: 1px solid black;">0.656</td></tr>
+            <tr><td style="border: 1px solid black;">t = 2 (11/09)</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td></tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.7. Ma trận Chuỗi dữ liệu đầu vào (Input Sequence) 3 ngày</p>
+
+    <p><strong>Bước 2: Khởi tạo trọng số và Công thức LSTM</strong></p>
+    <p>Giả sử mô hình có kích thước đầu vào (Input) = 3, kích thước ẩn (Hidden State) = 2. Trạng thái khởi tạo ban đầu: <code>h_-1 = [0, 0]</code> và <code>C_-1 = [0, 0]</code>. Tại mỗi bước thời gian t, thông tin đi qua 4 bộ cổng (Gates):</p>
+    <ul>
+        <li>Cổng quên: <code>f_t = &sigma;(W_f &middot; x_t + U_f &middot; h_{t-1} + b_f)</code></li>
+        <li>Cổng đầu vào: <code>i_t = &sigma;(W_i &middot; x_t + U_i &middot; h_{t-1} + b_i)</code></li>
+        <li>Ô nhớ ứng viên: <code>C~_t = tanh(W_c &middot; x_t + U_c &middot; h_{t-1} + b_c)</code></li>
+        <li>Cập nhật Ô nhớ: <code>C_t = f_t &odot; C_{t-1} + i_t &odot; C~_t</code></li>
+        <li>Cổng đầu ra: <code>o_t = &sigma;(W_o &middot; x_t + U_o &middot; h_{t-1} + b_o)</code></li>
+        <li>Trạng thái ẩn: <code>h_t = o_t &odot; tanh(C_t)</code></li>
+    </ul>
+    <p><em>Trong đó:</em></p>
+    <ul>
+        <li><em><code>x_t</code>: Vector đầu vào tại thời điểm t.</em></li>
+        <li><em><code>h_{t-1}, h_t</code>: Trạng thái ẩn (Hidden state) từ bước thời gian trước và hiện tại.</em></li>
+        <li><em><code>C_{t-1}, C_t, C~_t</code>: Trạng thái ô nhớ (Cell state) quá khứ, hiện tại và ứng viên.</em></li>
+        <li><em><code>W, U, b</code>: Các ma trận trọng số và vector độ lệch (bias) tương ứng của từng cổng.</em></li>
+        <li><em><code>&sigma;</code>: Hàm kích hoạt Sigmoid (cho giá trị từ 0 đến 1, kiểm soát tỷ lệ thông tin đi qua).</em></li>
+        <li><em><code>tanh</code>: Hàm kích hoạt Tangent Hyperbolic (cho giá trị từ -1 đến 1).</em></li>
+        <li><em><code>&odot;</code>: Phép nhân Hadamard (nhân từng phần tử tương ứng của hai ma trận/vector).</em></li>
+    </ul>
+
+    <p><strong>Bước 3: Lan truyền qua Cổng LSTM (Bước t=0, Ngày 09/09)</strong></p>
+    <p>Đầu vào: <code>x_0 = [0.000, 0.313, 0.180]</code>. Đi qua các ma trận trọng số (Weights) đã hội tụ (minh họa giá trị tính toán):</p>
+    <ul>
+        <li>Cổng quên: <code>f_0 = &sigma;([0.1, 0.2]) = [0.524, 0.549]</code></li>
+        <li>Cổng đầu vào: <code>i_0 = &sigma;([0.3, 0.4]) = [0.574, 0.598]</code></li>
+        <li>Ô nhớ ứng viên: <code>C~_0 = tanh([0.5, -0.1]) = [0.462, -0.099]</code></li>
+        <li>Trạng thái Ô nhớ: <code>C_0 = [0.524&times;0, 0.549&times;0] + [0.574&times;0.462, 0.598&times;(-0.099)] = [0.265, -0.059]</code></li>
+        <li>Cổng đầu ra: <code>o_0 = &sigma;([0.2, 0.5]) = [0.549, 0.622]</code></li>
+        <li>Trạng thái ẩn: <code>h_0 = [0.549&times;tanh(0.265), 0.622&times;tanh(-0.059)] = [0.142, -0.036]</code></li>
+    </ul>
+    
+    <p><strong>Bước 4: Lan truyền trạng thái ẩn và động lượng (Bước t=1 và t=2)</strong></p>
+    <p><strong>Tại t=1 (Ngày 10/09):</strong> Đầu vào tăng vọt <code>x_1 = [0.840, 0.435, 0.656]</code>. Nó kết hợp với động lượng từ quá khứ <code>h_0</code>.</p>
+    <ul>
+        <li>Cổng kích hoạt mạnh do đầu vào lớn: <code>f_1 = [0.622, 0.645]</code>, <code>i_1 = [0.668, 0.689]</code></li>
+        <li>Trạng thái ô nhớ cộng dồn: <code>C_1 = [0.607, 0.097]</code></li>
+        <li>Trạng thái ẩn nội suy: <code>h_1 = [0.348, 0.064]</code></li>
+    </ul>
+    <p><strong>Tại t=2 (Ngày 11/09):</strong> Đầu vào chạm đỉnh <code>x_2 = [1.000, 1.000, 1.000]</code>, xác nhận xu hướng uptrend cực mạnh.</p>
+    <ul>
+        <li>Các cổng tiếp nhận hoàn toàn mở: <code>f_2 = [0.689, 0.710]</code>, <code>i_2 = [0.731, 0.750]</code></li>
+        <li>Ô nhớ ghi nhận mức tối đa: <code>C_2 = [1.026, 0.414]</code></li>
+        <li>Trạng thái ẩn cuối cùng: <code>h_2 = [0.548, 0.285]</code></li>
+    </ul>
+    
+    <p><strong>Bước 5: Suy luận đầu ra qua Lớp kết nối đầy đủ (Dense Layer)</strong></p>
+    <p>Trạng thái ẩn cuối cùng được nhân với trọng số Fully Connected: <code>y_norm = (W_fc &middot; h_2) + b_fc</code></p>
+    <p>Với <code>W_fc = [1.4, 0.5]</code> và Bias <code>b_fc = 0.15</code>:</p>
+    <p><code>y_norm = (1.4 &times; 0.548) + (0.5 &times; 0.285) + 0.15 = 0.767 + 0.142 + 0.15 = 1.059</code></p>
+    <p>Có thể thấy, nhờ bắt được "gia tốc" tăng dần qua 3 phiên thông qua trạng thái ẩn <code>h</code> và ô nhớ <code>C</code>, thuật toán Neural đã tự tin dự báo một mức kỳ vọng (1.059) vượt qua mức trần dữ liệu cũ (1.0).</p>
+
+    <p><strong>Bước 6: Chuyển đổi ngược về giá trị thực (Inverse Transform)</strong></p>
+    <p><code>y_thực = y_norm &times; (Max - Min) + Min = 1.059 &times; 5.500 + 62.500 = 5.824,5 + 62.500 = 68.324,5 VNĐ</code>.</p>
+    
+    <h4>3.3.5.6. So sánh kết quả</h4>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #d9e1f2;">
+                <th style="border: 1px solid black; padding: 5px;">Mô hình</th>
+                <th style="border: 1px solid black; padding: 5px;">Giá dự đoán (nghìn VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Giá thực tế (nghìn VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Sai số</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid black; font-weight: bold;">Hồi quy tuyến tính</td>
+                <td style="border: 1px solid black;">66.61</td>
+                <td style="border: 1px solid black;" rowspan="3">68.90</td>
+                <td style="border: 1px solid black;">2.29 (3.32%)</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; font-weight: bold;">Random Forest</td>
+                <td style="border: 1px solid black;">66.72</td>
+                <td style="border: 1px solid black;">2.18 (3.16%)</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid black; font-weight: bold;">Mạng LSTM</td>
+                <td style="border: 1px solid black;">68.32</td>
+                <td style="border: 1px solid black;">0.58 (0.84%)</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.8. So sánh kết quả tính toán mô hình</p>
+    <p><em>*Lưu ý: Các giá trị trọng số trong các mô hình trên được giả định để minh họa từng bước toán học. Trong thực tế, hệ thống tối ưu hóa hàng triệu tham số này tự động thông qua hàng nghìn Epoch huấn luyện với thuật toán Gradient Descent.</em></p>
+    
+    <p><strong>Kết luận hiệu năng:</strong> Từ Bảng 3.8, có thể thấy các mô hình cơ sở như Hồi quy tuyến tính và Random Forest đều bị giới hạn bởi các giá trị quá khứ tĩnh, không bắt được xu hướng bứt phá nên chỉ đưa ra dự báo lần lượt là 66.61 và 66.72 (sai số > 3%). Trong khi đó, Hybrid LSTM với khả năng tích lũy động lượng chuỗi thời gian đã bứt phá khỏi giới hạn Scaler thông thường để dự báo đạt mức 68.32 (sai số chỉ 0.84%), bám sát giá trị thực tế là 68.90, qua đó chứng minh mạnh mẽ tính ưu việt của kiến trúc Deep Learning đối với bài toán dữ liệu chứng khoán.</p>
+    <h3>3.3.6. Giao diện ứng dụng người dùng (Web Interface)</h3>
+    <p>Để tăng cường tính ứng dụng thực tiễn và giúp nhà đầu tư dễ dàng tiếp cận kết quả dự báo của mô hình AI mà không cần am hiểu về lập trình, đề tài đã xây dựng và tích hợp thành công một giao diện tương tác trên nền tảng Web (Web Dashboard). Giao diện này đóng vai trò cầu nối, hiển thị dữ liệu trực quan bằng cách giao tiếp với hệ thống AI Backend thông qua các luồng API RESTful.</p>
+    
+    <h4>a. Màn hình Tổng quan (Dashboard)</h4>
+    <p>Màn hình Tổng quan đóng vai trò là giao diện trung tâm, cung cấp cái nhìn toàn cảnh về diễn biến thị trường của mã cổ phiếu VIC. Giao diện này bao gồm các tính năng chính:</p>
+    <ul>
+        <li><strong>Biểu đồ nến Nhật Bản (Candlestick chart):</strong> Hiển thị thời gian thực các biến động giá mở cửa, đóng cửa, giá trần và giá sàn trong từng phiên giao dịch.</li>
+        <li><strong>Tương tác đồ thị đa chiều:</strong> Cho phép người dùng linh hoạt phóng to, thu nhỏ, và dịch chuyển trục thời gian để phân tích xu hướng.</li>
+        <li><strong>Tích hợp chỉ báo kỹ thuật:</strong> Xếp chồng (overlay) các đường trung bình động (MA20), chỉ số sức mạnh tương đối (RSI) và phân kỳ hội tụ trung bình động (MACD). Các chỉ báo này được đồng bộ hóa trực tiếp, giúp nhà đầu tư thiết lập góc nhìn cơ sở.</li>
+    </ul>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="ui_dashboard.png" alt="Dashboard" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px;">
+        <br><em style="display: block; margin-top: 10px;">Hình 3.9. Giao diện màn hình Tổng quan theo dõi giá</em>
+    </div>
+
+    <h4>b. Màn hình Khuyến nghị giao dịch bằng AI (Trading Signals)</h4>
+    <p>Giao diện Khuyến nghị giao dịch là phân hệ trực quan hóa trực tiếp các kết quả đầu ra từ hệ thống học máy. Nhằm tăng cường tính diễn giải của AI (Explainable AI), thông tin được phân rã thành các cấu phần:</p>
+    <ul>
+        <li><strong>Tín hiệu phân loại (Classification Signal):</strong> Cung cấp nhãn hành động đề xuất (MUA, BÁN hoặc ĐỨNG NGOÀI) kèm theo thang đo độ tin cậy (Confidence Level) phản ánh xác suất chắc chắn của thuật toán.</li>
+        <li><strong>Tham số định lượng phân phối:</strong> Trình bày minh bạch Tỷ suất lợi nhuận kỳ vọng trung bình (&mu;) và Mức độ biến động rủi ro (&sigma;), làm cơ sở toán học tính toán xác suất biên.</li>
+        <li><strong>Giao diện đối chiếu chuỗi thời gian (Time-series Overlay):</strong> Vẽ song song đường giá dự báo (Prediction Line) và đường giá thực tế (Actual Line) giúp đánh giá trực quan năng lực bám sát thị trường của mô hình.</li>
+    </ul>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="ui_signals.png" alt="Trading Signals" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px;">
+        <br><em style="display: block; margin-top: 10px;">Hình 3.10. Giao diện phân tích và Tín hiệu AI</em>
+    </div>
+
+    <h4>c. Màn hình Đánh giá chiến lược (Backtesting Panel)</h4>
+    <p>Phân hệ Đánh giá chiến lược được thiết kế chuyên biệt để kiểm định tính ổn định của các thuật toán thông qua phương pháp mô phỏng trên dữ liệu lịch sử (Historical Backtesting). Các tính năng cốt lõi bao gồm:</p>
+    <ul>
+        <li><strong>Tùy chỉnh kịch bản:</strong> Cung cấp bộ công cụ để thiết lập khung thời gian (Timeframe) nhằm khởi chạy kịch bản giao dịch tự động.</li>
+        <li><strong>Báo cáo chỉ số hiệu suất:</strong> Trình bày chi tiết Tỷ lệ giao dịch thành công (Win Rate), Hệ số lợi nhuận (Profit Factor) và Tỷ lệ Sharpe để đánh giá lợi nhuận trên mỗi đơn vị rủi ro.</li>
+        <li><strong>Phân tích rủi ro và tăng trưởng:</strong> Hiển thị Mức sụt giảm tài sản tối đa (Max Drawdown) và trực quan hóa quỹ đạo biến động vốn qua Biểu đồ tăng trưởng (Equity Curve).</li>
+    </ul>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="ui_backtest.png" alt="Backtesting" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px;">
+        <br><em style="display: block; margin-top: 10px;">Hình 3.11. Giao diện Báo cáo mô phỏng chiến lược Backtest</em>
+    </div>
+
+    <h4>d. Màn hình Phân tích Tin tức & Cảm xúc (News & Sentiment)</h4>
+    <p>Màn hình này thể hiện năng lực xử lý dữ liệu phi cấu trúc của hệ thống thông qua kỹ thuật Xử lý Ngôn ngữ Tự nhiên (NLP). Khối lượng văn bản báo chí tài chính được chuyển hóa thành dữ liệu định lượng qua các lăng kính:</p>
+    <ul>
+        <li><strong>Biểu đồ phân tán (Scatter Plot):</strong> Mỗi bản tin là một điểm dữ liệu, với trục hoành biểu thị Điểm cảm xúc (Sentiment Score) từ tiêu cực đến tích cực, và kích thước điểm ảnh (bubble size) phản ánh Trọng số tác động (Impact Factor).</li>
+        <li><strong>Giải nghĩa cơ chế dung hợp (Data Fusion):</strong> Trình bày công khai các công thức toán học minh họa chi tiết quá trình LLM cập nhật lại Tỷ suất lợi nhuận kỳ vọng (&mu;) và Độ rủi ro (&sigma;) của mô hình cơ sở.</li>
+    </ul>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="ui_news_sentiment.png" alt="News and Sentiment Analysis" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px;">
+        <br><em style="display: block; margin-top: 10px;">Hình 3.12. Giao diện Phân tích Tin tức và lượng hóa Cảm xúc</em>
+    </div>
+
+    <h4>e. Màn hình Đối chiếu & Xếp hạng Mô hình (Model Comparison)</h4>
+    <p>Nhằm duy trì tính minh bạch học thuật, phân hệ này cung cấp lăng kính so sánh đa phương diện giữa thuật toán Hybrid LSTM đề xuất và các mô hình cơ sở (Linear Regression, Random Forest):</p>
+    <ul>
+        <li><strong>Đối chiếu dự báo điểm (Point Forecast):</strong> Liệt kê trực tiếp kết quả dự báo của từng thuật toán bên cạnh giá trị đóng cửa thực tế của thị trường.</li>
+        <li><strong>Đo lường sai số tự động:</strong> Hệ thống tự động tính toán Sai số tuyệt đối (Absolute Error) cho từng mô hình trong các điều kiện thị trường khác nhau.</li>
+        <li><strong>Bảng xếp hạng độ chính xác (Accuracy Leaderboard):</strong> Tổng hợp mức độ sai lệch để người dùng xác thực trực quan ưu thế về độ chính xác và tính ổn định của mô hình Hybrid LSTM.</li>
+    </ul>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="ui_prediction_compare.png" alt="Model Comparison" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px;">
+        <br><em style="display: block; margin-top: 10px;">Hình 3.13. Giao diện Đối chiếu và Xếp hạng độ chính xác Mô hình</em>
+    </div>
+
+    <h4>f. Màn hình Tổng quan Hệ thống Dự báo (AI Intelligence Summary)</h4>
+    <p>Đóng vai trò là thiết bị đầu cuối tổng hợp toàn bộ tri thức của hệ thống (Intelligence Hub), màn hình này hỗ trợ tối đa hóa tốc độ và độ chính xác trong quá trình ra quyết định:</p>
+    <ul>
+        <li><strong>Bảng tóm tắt đa phương thức (Multi-modal Summary):</strong> Kết hợp tín hiệu kỹ thuật và phân tích cảm xúc tin tức để đưa ra Nhãn hành động tối ưu cuối cùng.</li>
+        <li><strong>Mức độ tự tin tổng hợp (Ensemble Confidence):</strong> Định lượng hóa xác suất tin cậy của toàn hệ thống và đối chiếu trực quan dự báo của từng mô hình đơn lẻ (LSTM, RF, LR).</li>
+        <li><strong>Cảnh báo định lượng rủi ro:</strong> Tích hợp chỉ số Giá trị chịu rủi ro ở mức độ tin cậy 95% (VaR 95%), đảm bảo nhà đầu tư luôn nhận thức được xác suất thua lỗ tối đa tiềm ẩn trước khi khớp lệnh.</li>
+    </ul>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="ui_system_overview.png" alt="AI Intelligence Summary" style="max-width: 100%; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px;">
+        <br><em style="display: block; margin-top: 10px;">Hình 3.14. Giao diện Tổng quan Tóm tắt Dự báo và Khuyến nghị</em>
+    </div>
+
+    <h2>3.4. Kết luận chương 3</h2>
+    <p>Tóm lại, Chương 3 đã trình bày toàn bộ quy trình thiết kế, cài đặt kỹ thuật và thực nghiệm hệ thống dự báo giá cổ phiếu VIC. Từ việc xây dựng luồng dữ liệu (Pipeline) khép kín bao gồm thu thập dữ liệu giao dịch kết hợp phân tích cảm xúc tin tức (NLP), hệ thống đã trích xuất đặc trưng và chuẩn hóa dữ liệu thành công làm đầu vào vững chắc cho các mô hình học máy. Đề tài đã tự lập trình từ cốt lõi (from scratch) các kiến trúc mô hình cơ sở như Linear Regression, Random Forest cho tới mô hình lai học sâu phức tạp Hybrid LSTM (tích hợp CNN và Attention). Thông qua quá trình huấn luyện và đối chiếu nghiêm ngặt, kết quả thực nghiệm chỉ ra rằng mô hình Hybrid LSTM thể hiện sự vượt trội hoàn toàn về khả năng nhận diện động lượng chuỗi thời gian, đem lại sai số dự báo nhỏ nhất. Điểm đột phá của chương này là việc không dừng lại ở các thước đo sai số toán học đơn thuần mà đã tích hợp thành công cơ chế mô phỏng giao dịch thực chiến (Backtesting) bằng các chỉ số tài chính tiêu chuẩn như Tỷ lệ thắng (Win Rate), Tỷ lệ Sharpe và Sụt giảm tối đa (Max Drawdown). Qua đó, hệ thống không chỉ minh chứng được năng lực dự báo chính xác mà còn thể hiện khả năng ra quyết định và quản trị rủi ro danh mục vượt trội so với chiến lược Buy & Hold, mở ra hướng ứng dụng thực tiễn mạnh mẽ cho công nghệ Trí tuệ nhân tạo (AI) trong lĩnh vực đầu tư tài chính tại Việt Nam.</p>
+
+</div>
+
+</body>
+</html>

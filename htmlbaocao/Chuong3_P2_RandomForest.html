@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Chương 3 - Phần 2: Random Forest</title>
+<style>
+  @page { size: A4; margin: 2cm 2cm 2cm 3cm; }
+  body { background: #525659; margin: 0; padding: 20px; font-family: "Times New Roman", serif; }
+  .page { background: white; width: 210mm; margin: 0 auto; padding: 2.5cm 2cm 2.5cm 3.5cm; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.4); }
+  h2 { font-size: 14pt; font-weight: bold; margin-top: 18pt; text-transform: uppercase; }
+  h3 { font-size: 13pt; font-weight: bold; margin-top: 14pt; }
+  h4 { font-size: 12pt; font-weight: bold; font-style: italic; margin-top: 10pt; }
+  p  { font-size: 13pt; text-align: justify; text-indent: 1.25cm; margin: 6pt 0; line-height: 1.5; }
+  .no-i { text-indent: 0; }
+  ul,ol { font-size: 13pt; line-height: 1.5; margin-left: 1.5cm; }
+  table { width: 100%; border-collapse: collapse; margin: 14pt 0; font-size: 12pt; }
+  th,td { border: 1px solid #000; padding: 5px 8px; text-align: center; }
+  th { background: #f0f0f0; font-weight: bold; }
+  .caption { text-align: center; font-weight: bold; font-size: 12pt; margin: 6pt 0; }
+  .formula { background: #f9f9f9; border-left: 4px solid #444; padding: 10px 16px; margin: 12pt 1.25cm; font-style: italic; font-size: 13pt; line-height: 1.8; }
+  .box { border: 1px solid #888; background: #fefefe; padding: 12px 16px; margin: 12pt 0; }
+  .note { border-left: 4px solid #c00; padding: 8px 14px; background: #fff5f5; margin: 10pt 0; font-size: 12pt; }
+  .tree { font-family: monospace; font-size: 12pt; background: #f4f4f4; padding: 14px; border: 1px solid #bbb; margin: 10pt 0; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h2>3.4. Mô hình 2: Rừng ngẫu nhiên (Random Forest)</h2>
+
+<h3>3.4.1. Cơ sở lý thuyết</h3>
+<p>Random Forest là một phương pháp học tổ hợp (Ensemble Learning) được xây dựng từ nhiều Cây quyết định (Decision Tree) độc lập. Mỗi cây được huấn luyện trên một tập con dữ liệu ngẫu nhiên (Bootstrap Sample) và chỉ xét một tập con các đặc trưng tại mỗi node (Feature Bagging), giúp giảm hiện tượng phương sai cao (High Variance) của từng cây đơn lẻ.</p>
+
+<p>Giá trị dự báo cuối cùng là <b>trung bình cộng</b> của kết quả tất cả các cây:</p>
+<div class="formula">ŷ<sub>RF</sub> = (1/N) · Σᵢ T_i(x)</div>
+<p class="no-i">Trong đó T_i(x) là giá trị dự báo của cây thứ i với đầu vào x, N là tổng số cây trong rừng.</p>
+
+<p>Mỗi cây quyết định phân tách dữ liệu bằng cách chọn đặc trưng và ngưỡng chia (Split Threshold) sao cho <b>tổng MSE có trọng số tại hai nhánh con là nhỏ nhất</b>:</p>
+<div class="formula">
+MSE(node) = (1/n) · Σ (yᵢ − ȳ)²<br><br>
+Gain = MSE(parent) − [ (n_L/n)·MSE(L) + (n_R/n)·MSE(R) ]<br><br>
+→ Chọn split tại đặc trưng f và ngưỡng t* = argmax Gain(f, t)
+</div>
+
+<h3>3.4.2. Tính toán bằng tay – Xây dựng từng cây</h3>
+
+<h4>Bước 1: Bootstrap Sampling</h4>
+<p>Rừng gồm 3 cây minh họa. Mỗi cây lấy mẫu có hoàn lại (with replacement) từ 7 phiên Train:</p>
+<p class="caption">Bảng 3.4. Bootstrap Samples cho 3 cây quyết định</p>
+<table>
+  <tr><th>Cây</th><th>Dòng được chọn (có thể lặp)</th><th>Đặc trưng được dùng</th></tr>
+  <tr><td>Cây 1</td><td>{1, 2, 4, 4, 5, 6, 7}</td><td>Open_z, High_z</td></tr>
+  <tr><td>Cây 2</td><td>{1, 2, 3, 5, 5, 6, 7}</td><td>High_z, Low_z</td></tr>
+  <tr><td>Cây 3</td><td>{2, 3, 4, 5, 6, 7, 7}</td><td>Open_z, Low_z</td></tr>
+</table>
+
+<h4>Bước 2: Xây dựng Cây 1 (Open_z, High_z)</h4>
+<p>Tập dữ liệu Cây 1 (dòng {1,2,4,4,5,6,7}, Close_y): {62.50, 62.50, 62.50, 62.50, 64.60, 65.45, 68.00}</p>
+<p>MSE của node gốc (trước khi chia):</p>
+<div class="formula">
+ȳ_gốc = (62.50+62.50+62.50+62.50+64.60+65.45+68.00)/7 = 447.05/7 = 63.86<br><br>
+MSE_gốc = [(62.50−63.86)²+(62.50−63.86)²+(62.50−63.86)²+(62.50−63.86)²<br>
+         +(64.60−63.86)²+(65.45−63.86)²+(68.00−63.86)²] / 7<br>
+= [1.848+1.848+1.848+1.848+0.548+2.528+17.140] / 7<br>
+= 27.608 / 7 = <b>3.944</b>
+</div>
+
+<p><b>Thử chia tại Open_z ≤ 0 (ngưỡng phân tách giữa nhóm thấp và cao):</b></p>
+<ul>
+  <li><b>Nhánh TRÁI</b> (Open_z ≤ 0): dòng {2,4,4,5} → Close_y = {62.50, 62.50, 62.50, 64.60}<br>
+      ȳ_L = (62.50+62.50+62.50+64.60)/4 = 252.10/4 = <b>63.03</b><br>
+      MSE_L = [(62.50−63.03)²+(62.50−63.03)²+(62.50−63.03)²+(64.60−63.03)²]/4<br>
+            = [0.281+0.281+0.281+2.465]/4 = 3.308/4 = <b>0.827</b></li>
+  <li><b>Nhánh PHẢI</b> (Open_z > 0): dòng {1,6,7} → Close_y = {62.50, 65.45, 68.00}<br>
+      ȳ_R = (62.50+65.45+68.00)/3 = 195.95/3 = <b>65.32</b><br>
+      MSE_R = [(62.50−65.32)²+(65.45−65.32)²+(68.00−65.32)²]/3<br>
+            = [7.952+0.017+7.181]/3 = 15.150/3 = <b>5.050</b></li>
+</ul>
+
+<div class="formula">
+MSE_split(Open_z ≤ 0) = (n_L/n)·MSE_L + (n_R/n)·MSE_R<br>
+= (4/7)×0.827 + (3/7)×5.050<br>
+= 0.473 + 2.164 = <b>2.637</b><br><br>
+Information Gain = 3.944 − 2.637 = <b>1.307</b>  ✓ (chọn điểm chia này)
+</div>
+
+<div class="tree">
+<b>CÂY 1 (max_depth=1):</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;[Open_z ≤ 0?]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── CÓ (≤0): → ŷ = <b>63.03</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── KHÔNG (>0): → ŷ = <b>65.32</b>
+</div>
+
+<h4>Bước 3: Xây dựng Cây 2 (High_z, Low_z)</h4>
+<p>Tập dữ liệu Cây 2 (dòng {1,2,3,5,5,6,7}), Close_y: {62.50, 62.50, 62.50, 64.60, 64.60, 65.45, 68.00}</p>
+<p><b>Điểm chia tốt nhất:</b> High_z ≤ 0</p>
+<ul>
+  <li><b>Nhánh TRÁI</b> (High_z ≤ 0): dòng {1,2,3,5} → Close_y = {62.50, 62.50, 62.50, 64.60}; ȳ_L = <b>63.03</b></li>
+  <li><b>Nhánh PHẢI</b> (High_z > 0): dòng {5,6,7} → Close_y = {64.60, 65.45, 68.00}; ȳ_R = <b>66.02</b></li>
+</ul>
+<div class="tree">
+<b>CÂY 2 (max_depth=1):</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;[High_z ≤ 0?]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── CÓ (≤0): → ŷ = <b>63.03</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── KHÔNG (>0): → ŷ = <b>66.02</b>
+</div>
+
+<h4>Bước 4: Xây dựng Cây 3 (Open_z, Low_z)</h4>
+<p>Tập dữ liệu Cây 3 (dòng {2,3,4,5,6,7,7}), Close_y: {62.50, 62.50, 62.50, 64.60, 65.45, 68.00, 68.00}</p>
+<p><b>Điểm chia tốt nhất:</b> Low_z ≤ 0.5</p>
+<ul>
+  <li><b>Nhánh TRÁI</b> (Low_z ≤ 0.5): dòng {2,3,4,5} → Close_y = {62.50, 62.50, 62.50, 64.60}; ȳ_L = <b>63.03</b></li>
+  <li><b>Nhánh PHẢI</b> (Low_z > 0.5): dòng {6,7,7} → Close_y = {65.45, 68.00, 68.00}; ȳ_R = <b>67.15</b></li>
+</ul>
+<div class="tree">
+<b>CÂY 3 (max_depth=1):</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;[Low_z ≤ 0.5?]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── CÓ (≤0.5): → ŷ = <b>63.03</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── KHÔNG (>0.5): → ŷ = <b>67.15</b>
+</div>
+
+<h4>Bước 5: Dự báo điểm Test (dòng 8 – 12/09/2025)</h4>
+<p>Vector đặc trưng đã chuẩn hóa: Open_z = 4.33, High_z = 2.00, Low_z = 4.46.</p>
+<ul>
+  <li><b>Cây 1:</b> Open_z = 4.33 > 0 → Nhánh PHẢI → ŷ₁ = <b>65.32</b></li>
+  <li><b>Cây 2:</b> High_z = 2.00 > 0 → Nhánh PHẢI → ŷ₂ = <b>66.02</b></li>
+  <li><b>Cây 3:</b> Low_z = 4.46 > 0.5 → Nhánh PHẢI → ŷ₃ = <b>67.15</b></li>
+</ul>
+
+<div class="formula">
+ŷ<sub>RF</sub> = (ŷ₁ + ŷ₂ + ŷ₃) / 3<br>
+= (65.32 + 66.02 + 67.15) / 3<br>
+= 198.49 / 3<br>
+= <b>66.16 nghìn VNĐ</b>
+</div>
+
+<div class="box">
+<p class="no-i"><b>Kết quả Random Forest:</b></p>
+<p class="no-i">Giá dự báo:  <b>66.16 nghìn VNĐ</b></p>
+<p class="no-i">Giá thực tế: 68.90 nghìn VNĐ</p>
+<p class="no-i">Sai số MAE: |66.16 − 68.90| = <b>2.74 nghìn VNĐ (3.97%)</b></p>
+</div>
+
+<h3>3.4.3. Phân tích hạn chế của mô hình</h3>
+<p>Mặc dù Random Forest xử lý tốt tính phi tuyến nhờ cơ chế chia nhánh theo ngưỡng, nhưng mô hình này vẫn tồn tại hai hạn chế cốt lõi khi áp dụng vào bài toán tài chính:</p>
+<ul>
+  <li><b>Thiếu bộ nhớ thứ tự (Order-Agnostic):</b> Random Forest coi mỗi phiên giao dịch là <i>độc lập và không thứ tự</i>. Nó không hiểu rằng "Hôm qua tăng, hôm kia tăng, hôm nay có thể vẫn tăng". Đây là giả định sai về bản chất của chuỗi thời gian.</li>
+  <li><b>Giới hạn khi dự báo đa bước (Multi-step Failure):</b> Để dự báo ngày t+2, RF cần đặc trưng {Open, High, Low} của ngày t+1. Nhưng các giá trị đó chưa tồn tại. Nếu thay thế bằng giá dự báo của t+1, sai số sẽ nhân lên gấp bội qua mỗi bước — một hiện tượng gọi là <b>Error Propagation</b>.</li>
+</ul>
+
+<div class="note">
+<b>Kết luận Module:</b> Random Forest là một cải tiến đáng kể so với Linear Regression nhờ khả năng nắm bắt phi tuyến tính. Tuy nhiên, bản chất <i>"Snapshot"</i> (chỉ nhìn một thời điểm) làm cho nó không phù hợp với việc mô hình hóa xu hướng và đà (momentum) của giá cổ phiếu theo thời gian.
+</div>
+
+</div>
+</body>
+</html>

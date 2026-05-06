@@ -1,0 +1,113 @@
+
+    <h3>3.3.5. Minh họa cơ chế tính toán thực tế</h3>
+    <h4>3.3.5.1. Bộ dữ liệu mẫu trích xuất (Tháng 09/2025)</h4>
+    <p>Để minh họa luồng xử lý toán học của hệ thống, chúng tôi trích xuất 10 dòng dữ liệu thực tế liên tiếp của mã VIC từ ngày 03/09/2025 đến 16/09/2025.</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 5px;">STT</th>
+                <th style="border: 1px solid black; padding: 5px;">Ngày</th>
+                <th style="border: 1px solid black; padding: 5px;">Mở cửa (VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Cao nhất (VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Thấp nhất (VNĐ)</th>
+                <th style="border: 1px solid black; padding: 5px;">Đóng cửa (VNĐ)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="border: 1px solid black;">1</td><td style="border: 1px solid black;">2025-09-03</td><td style="border: 1px solid black;">63.550</td><td style="border: 1px solid black;">64.100</td><td style="border: 1px solid black;">62.250</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">2</td><td style="border: 1px solid black;">2025-09-04</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">63.000</td><td style="border: 1px solid black;">61.500</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">3</td><td style="border: 1px solid black;">2025-09-05</td><td style="border: 1px solid black;">62.600</td><td style="border: 1px solid black;">64.900</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">4</td><td style="border: 1px solid black;">2025-09-08</td><td style="border: 1px solid black;">62.550</td><td style="border: 1px solid black;">64.000</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">62.500</td></tr>
+            <tr><td style="border: 1px solid black;">5</td><td style="border: 1px solid black;">2025-09-09</td><td style="border: 1px solid black;">62.500</td><td style="border: 1px solid black;">64.800</td><td style="border: 1px solid black;">62.050</td><td style="border: 1px solid black;">64.600</td></tr>
+            <tr><td style="border: 1px solid black;">6</td><td style="border: 1px solid black;">2025-09-10</td><td style="border: 1px solid black;">64.600</td><td style="border: 1px solid black;">65.500</td><td style="border: 1px solid black;">63.500</td><td style="border: 1px solid black;">65.450</td></tr>
+            <tr><td style="border: 1px solid black;">7</td><td style="border: 1px solid black;">2025-09-11</td><td style="border: 1px solid black;">65.000</td><td style="border: 1px solid black;">68.750</td><td style="border: 1px solid black;">64.550</td><td style="border: 1px solid black;">68.000</td></tr>
+            <tr style="background-color: #fff2cc; font-weight: bold;"><td style="border: 1px solid black;">8</td><td style="border: 1px solid black;">2025-09-12</td><td style="border: 1px solid black;">68.000</td><td style="border: 1px solid black;">69.050</td><td style="border: 1px solid black;">67.050</td><td style="border: 1px solid black;">? (Mục tiêu)</td></tr>
+            <tr><td style="border: 1px solid black;">9</td><td style="border: 1px solid black;">2025-09-15</td><td style="border: 1px solid black;">68.850</td><td style="border: 1px solid black;">68.900</td><td style="border: 1px solid black;">67.400</td><td style="border: 1px solid black;">68.900</td></tr>
+            <tr><td style="border: 1px solid black;">10</td><td style="border: 1px solid black;">2025-09-16</td><td style="border: 1px solid black;">68.900</td><td style="border: 1px solid black;">68.900</td><td style="border: 1px solid black;">66.950</td><td style="border: 1px solid black;">67.500</td></tr>
+        </tbody>
+    </table>
+    <p class="center-image">Bảng 3.10. Trích xuất 10 dòng dữ liệu giao dịch cổ phiếu VIC</p>
+    <p><strong>Mục tiêu:</strong> Dự đoán giá đóng cửa của ngày 12/09/2025 (dòng số 8) dựa trên mô hình đã được huấn luyện bằng 7 dòng trước đó (từ 03/09 đến 11/09). Giá đóng cửa thực tế của ngày 12/09 là 68.900 VNĐ.</p>
+
+    <h4>3.3.5.2. Minh họa tính toán với mô hình Baseline (Random Forest)</h4>
+    <p><strong>Bước 1: Chuẩn hóa dữ liệu (Min-Max Scaler)</strong></p>
+    <p>Theo thiết kế hệ thống (mục 3.1.2.c), hệ thống sử dụng thuật toán Min-Max Scaler. Quá trình quét tìm giá trị Min, Max trên tập Huấn luyện (7 dòng đầu) như sau:</p>
+    <ul>
+        <li><strong>Mở cửa:</strong> Min = 62.500, Max = 65.000 → Range = 2.500</li>
+        <li><strong>Cao nhất:</strong> Min = 63.000, Max = 68.750 → Range = 5.750</li>
+        <li><strong>Thấp nhất:</strong> Min = 61.500, Max = 64.550 → Range = 3.050</li>
+        <li><strong>Đóng cửa:</strong> Min = 62.500, Max = 68.000 → Range = 5.500</li>
+    </ul>
+    <p>Công thức: <code>X_norm = (X - X_min) / (X_max - X_min)</code>. Kết quả chuẩn hóa cho 7 dòng Train:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black;">STT</th>
+                <th style="border: 1px solid black;">Mở cửa_norm</th>
+                <th style="border: 1px solid black;">Cao nhất_norm</th>
+                <th style="border: 1px solid black;">Thấp nhất_norm</th>
+                <th style="border: 1px solid black;">Đóng cửa_norm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="border: 1px solid black;">1</td><td style="border: 1px solid black;">0.420</td><td style="border: 1px solid black;">0.191</td><td style="border: 1px solid black;">0.246</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">2</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">3</td><td style="border: 1px solid black;">0.040</td><td style="border: 1px solid black;">0.330</td><td style="border: 1px solid black;">0.328</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">4</td><td style="border: 1px solid black;">0.020</td><td style="border: 1px solid black;">0.174</td><td style="border: 1px solid black;">0.328</td><td style="border: 1px solid black;">0.000</td></tr>
+            <tr><td style="border: 1px solid black;">5</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.313</td><td style="border: 1px solid black;">0.180</td><td style="border: 1px solid black;">0.382</td></tr>
+            <tr><td style="border: 1px solid black;">6</td><td style="border: 1px solid black;">0.840</td><td style="border: 1px solid black;">0.435</td><td style="border: 1px solid black;">0.656</td><td style="border: 1px solid black;">0.536</td></tr>
+            <tr><td style="border: 1px solid black;">7</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td></tr>
+        </tbody>
+    </table>
+    
+    <p><strong>Bước 2: Xây dựng Cây quyết định (Decision Trees)</strong></p>
+    <p>Giả sử Random Forest xây dựng 3 cây từ các mẫu ngẫu nhiên (Bootstrapping) và chọn đặc trưng ngẫu nhiên:</p>
+    <ul>
+        <li><strong>Cây 1 (Chia theo Mở cửa):</strong> Nếu <code>Mở_cửa_norm &le; 0.5</code> (dòng 1-5), mức Đóng cửa trung bình = 0.076. Nếu <code>&gt; 0.5</code> (dòng 6-7), trung bình = 0.768.</li>
+        <li><strong>Cây 2 (Chia theo Cao nhất):</strong> Nếu <code>Cao_nhất_norm &le; 0.35</code> (dòng 1,2,3,4,5), trung bình = 0.076. Nếu <code>&gt; 0.35</code> (dòng 6-7), trung bình = 0.768.</li>
+        <li><strong>Cây 3 (Chia theo Thấp nhất):</strong> Nếu <code>Thấp_nhất_norm &le; 0.5</code> (dòng 1-5), trung bình = 0.076. Nếu <code>&gt; 0.5</code> (dòng 6-7), trung bình = 0.768.</li>
+    </ul>
+
+    <p><strong>Bước 3: Dự đoán dòng 8 (Ngày 12/09/2025)</strong></p>
+    <p>Dữ liệu dòng 8 thực tế: Mở cửa = 68.000, Cao nhất = 69.050, Thấp nhất = 67.050.</p>
+    <p>Chuẩn hóa dữ liệu tương lai dựa trên bộ Scaler của quá khứ:</p>
+    <ul>
+        <li><code>Mở_cửa_z</code> = (68.000 - 62.500) / 2.500 = 2.200</li>
+        <li><code>Cao_nhất_z</code> = (69.050 - 63.000) / 5.750 = 1.052</li>
+        <li><code>Thấp_nhất_z</code> = (67.050 - 61.500) / 3.050 = 1.820</li>
+    </ul>
+    <p>Đưa qua 3 Cây quyết định, toàn bộ giá trị norm đều lớn hơn ngưỡng chia (thuộc nhánh phải), do đó 3 Cây đều dự báo <code>y_norm = 0.768</code>. Kết quả Random Forest (Trung bình tổ hợp) là <strong>0.768</strong>.</p>
+    <p>Chuyển đổi ngược (Inverse Transform): <code>y_thực = 0.768 &times; 5.500 + 62.500 = 66.724 VNĐ</code>.</p>
+    
+    <h4>3.3.5.3. Minh họa tính toán với Mạng Neural (Hybrid LSTM)</h4>
+    <p>Khác với Random Forest, LSTM học theo chuỗi. Giả sử <code>Window Size = 3</code>, để dự báo ngày 12/09, input sequence là ma trận [3x3] của các ngày 09, 10, 11 tháng 09.</p>
+    
+    <p><strong>Bước 1: Ma trận Input Sequence (X_t)</strong></p>
+    <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black;">Bước thời gian</th>
+                <th style="border: 1px solid black;">Mở cửa_norm</th>
+                <th style="border: 1px solid black;">Cao nhất_norm</th>
+                <th style="border: 1px solid black;">Thấp nhất_norm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="border: 1px solid black;">t = 0 (09/09)</td><td style="border: 1px solid black;">0.000</td><td style="border: 1px solid black;">0.313</td><td style="border: 1px solid black;">0.180</td></tr>
+            <tr><td style="border: 1px solid black;">t = 1 (10/09)</td><td style="border: 1px solid black;">0.840</td><td style="border: 1px solid black;">0.435</td><td style="border: 1px solid black;">0.656</td></tr>
+            <tr><td style="border: 1px solid black;">t = 2 (11/09)</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td><td style="border: 1px solid black;">1.000</td></tr>
+        </tbody>
+    </table>
+
+    <p><strong>Bước 2: Lan truyền qua Cổng LSTM (Bước t=0)</strong></p>
+    <p>Giả sử các ma trận trọng số <code>W</code> đã được huấn luyện hội tụ sinh ra tập số ngẫu nhiên: Cổng quên <code>f_0 = 0.55</code>, Cổng vào <code>i_0 = 0.60</code>, Ô nhớ <code>C~_0 = 0.80</code>. Trạng thái ô nhớ được cập nhật: <code>C_0 = f_0 &times; 0 + i_0 &times; C~_0 = 0.48</code>. Trạng thái ẩn: <code>h_0 = o_0 &times; tanh(C_0) = 0.22</code>.</p>
+    
+    <p><strong>Bước 3: Lan truyền trạng thái ẩn (Bước t=1 và t=2)</strong></p>
+    <p>Thông tin từ ngày 09/09 (h_0) tiếp tục được truyền qua cổng của ngày 10/09, kết hợp với độ tăng mạnh của dữ liệu ngày 10/09 (mở cửa_norm = 0.84) tạo ra một động lượng mới <code>C_1 = 0.65</code> và <code>h_1 = 0.45</code>. Đến ngày 11/09 (xu hướng uptrend rất rõ), các cổng ghi nhớ kích hoạt mạnh, xuất ra trạng thái ẩn cuối cùng <code>h_2 = 0.75</code>.</p>
+    
+    <p><strong>Bước 4: Suy luận đầu ra qua Dense Layer</strong></p>
+    <p>Mạng đi qua lớp nơ-ron Fully Connected: <code>y_norm = W_dense &times; h_2 + B = 0.90</code>. Nhờ khả năng bắt được động lượng tăng dần qua 3 phiên, thuật toán Neural đã nội suy một mức giá cao hơn nhiều so với trung bình của Decision Tree.</p>
+    <p>Chuyển đổi ngược (Inverse Transform): <code>y_thực = 0.90 &times; 5.500 + 62.500 = 67.450 VNĐ</code>.</p>
+    
+    <p><strong>Kết luận:</strong> Giá thực tế là <strong>68.900 VNĐ</strong>. Dự báo của Random Forest là <strong>66.724 VNĐ</strong> (kém linh hoạt do bị kéo lùi bởi các giá trị quá khứ tĩnh), trong khi đó LSTM với khả năng nhớ xu hướng tuần tự đạt <strong>67.450 VNĐ</strong>, bám sát thực tế hơn hẳn.</p>

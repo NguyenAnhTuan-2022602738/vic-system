@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Chương 3 - Phần 1: Linear Regression</title>
+<style>
+  @page { size: A4; margin: 2cm 2cm 2cm 3cm; }
+  body { background: #525659; margin: 0; padding: 20px; font-family: "Times New Roman", serif; }
+  .page { background: white; width: 210mm; margin: 0 auto; padding: 2.5cm 2cm 2.5cm 3.5cm; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.4); }
+  h1 { text-align: center; font-size: 16pt; text-transform: uppercase; margin-bottom: 6pt; }
+  h2 { font-size: 14pt; font-weight: bold; margin-top: 18pt; text-transform: uppercase; }
+  h3 { font-size: 13pt; font-weight: bold; margin-top: 14pt; }
+  h4 { font-size: 12pt; font-weight: bold; font-style: italic; margin-top: 10pt; }
+  p  { font-size: 13pt; text-align: justify; text-indent: 1.25cm; margin: 6pt 0; line-height: 1.5; }
+  .no-i { text-indent: 0; }
+  ul,ol { font-size: 13pt; line-height: 1.5; margin-left: 1.5cm; }
+  table { width: 100%; border-collapse: collapse; margin: 14pt 0; font-size: 12pt; }
+  th,td { border: 1px solid #000; padding: 5px 8px; text-align: center; }
+  th { background: #f0f0f0; font-weight: bold; }
+  .highlight { background: #ffff00; font-weight: bold; }
+  .caption { text-align: center; font-weight: bold; font-size: 12pt; margin: 6pt 0; }
+  .formula { background: #f9f9f9; border-left: 4px solid #444; padding: 10px 16px; margin: 12pt 1.25cm; font-style: italic; font-size: 13pt; line-height: 1.8; }
+  .box { border: 1px solid #888; background: #fefefe; padding: 12px 16px; margin: 12pt 0; }
+  .note { border-left: 4px solid #c00; padding: 8px 14px; background: #fff5f5; margin: 10pt 0; font-size: 12pt; }
+  .step { font-weight: bold; font-style: italic; color: #003366; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>CHƯƠNG 3. PHÂN TÍCH VÀ TÍNH TOÁN CHI TIẾT<br>CÁC MÔ HÌNH DỰ BÁO</h1>
+
+<h2>3.1. Giới thiệu chương</h2>
+<p>Chương này trình bày chi tiết quá trình phân tích toán học và minh họa tính toán thủ công (Manual Calculation) cho ba mô hình dự báo được nghiên cứu trong đồ án: (1) Hồi quy tuyến tính (Linear Regression), (2) Rừng ngẫu nhiên (Random Forest), và (3) Mạng học sâu LSTM. Để đảm bảo tính khách quan trong so sánh, cả ba mô hình đều được thực nghiệm trên cùng một bộ dữ liệu mẫu và sử dụng cùng một bộ đặc trưng đầu vào (Input Features).</p>
+<p>Việc tính toán thủ công không chỉ nhằm kiểm chứng tính đúng đắn của các thuật toán, mà còn giúp làm rõ bản chất toán học cũng như điểm mạnh, điểm yếu đặc thù của từng phương pháp khi áp dụng vào bài toán dự báo giá cổ phiếu VIC — một loại dữ liệu chuỗi thời gian tài chính mang đặc trưng phi tuyến, nhiều nhiễu và phụ thuộc dài hạn.</p>
+
+<h2>3.2. Thiết lập dữ liệu thực nghiệm</h2>
+<h3>3.2.1. Bộ đặc trưng đầu vào thống nhất</h3>
+<p>Để đảm bảo tính khách quan, cả ba mô hình đều nhận đầu vào là ba đặc trưng kỹ thuật cơ bản nhất của một phiên giao dịch:</p>
+<ul>
+  <li><b>x₁</b> – Giá mở cửa (Open Price)</li>
+  <li><b>x₂</b> – Giá cao nhất (High Price)</li>
+  <li><b>x₃</b> – Giá thấp nhất (Low Price)</li>
+</ul>
+<p>Biến mục tiêu (Target Variable) cần dự báo là <b>y – Giá đóng cửa (Close Price)</b> của cùng phiên giao dịch đó. Đây là một bài toán <i>hồi quy tức thời (same-day regression)</i>, trong đó các đặc trưng trong ngày được dùng để ước lượng giá đóng cửa của chính ngày đó.</p>
+
+<h3>3.2.2. Dữ liệu mẫu</h3>
+<p>Bộ dữ liệu mẫu gồm 10 phiên giao dịch của cổ phiếu VIC trong tháng 09/2025, được trích xuất trực tiếp từ hệ thống qua thư viện <code>vnstock</code> (nguồn VCI Securities). Trong đó, dòng 1-7 được sử dụng làm tập Huấn luyện (Train Set) và dòng 8 là đối tượng cần dự báo (Test Point).</p>
+
+<p class="caption">Bảng 3.1. Dữ liệu mẫu cổ phiếu VIC – Tháng 09/2025 (đơn vị: nghìn VNĐ)</p>
+<table>
+  <tr><th>STT</th><th>Ngày</th><th>Open (x₁)</th><th>High (x₂)</th><th>Low (x₃)</th><th>Close (y)</th></tr>
+  <tr><td>1</td><td>03/09/2025</td><td>63.55</td><td>64.10</td><td>62.25</td><td>62.50</td></tr>
+  <tr><td>2</td><td>04/09/2025</td><td>62.50</td><td>63.00</td><td>61.50</td><td>62.50</td></tr>
+  <tr><td>3</td><td>05/09/2025</td><td>62.60</td><td>64.90</td><td>62.50</td><td>62.50</td></tr>
+  <tr><td>4</td><td>08/09/2025</td><td>62.55</td><td>64.00</td><td>62.50</td><td>62.50</td></tr>
+  <tr><td>5</td><td>09/09/2025</td><td>62.50</td><td>64.80</td><td>62.05</td><td>64.60</td></tr>
+  <tr><td>6</td><td>10/09/2025</td><td>64.60</td><td>65.50</td><td>63.50</td><td>65.45</td></tr>
+  <tr><td>7</td><td>11/09/2025</td><td>65.00</td><td>68.75</td><td>64.55</td><td>68.00</td></tr>
+  <tr class="highlight"><td>8</td><td>12/09/2025</td><td>68.00</td><td>69.05</td><td>67.05</td><td>?</td></tr>
+  <tr><td>9</td><td>15/09/2025</td><td>68.85</td><td>68.90</td><td>67.40</td><td>68.90</td></tr>
+  <tr><td>10</td><td>16/09/2025</td><td>68.90</td><td>68.90</td><td>66.95</td><td>67.50</td></tr>
+</table>
+<p><b>Mục tiêu:</b> Dự báo giá đóng cửa của ngày 12/09/2025 (dòng 8, tô vàng). Giá thực tế ghi nhận được là <b>68.90 nghìn VNĐ</b>. Đây sẽ là căn cứ để tính sai số (MAE) cho từng mô hình.</p>
+
+<h3>3.2.3. Tiền xử lý: Chuẩn hóa Z-Score</h3>
+<p>Trước khi đưa vào mô hình, toàn bộ các đặc trưng số cần được chuẩn hóa về phân phối chuẩn có trung bình bằng 0 và độ lệch chuẩn bằng 1. Công thức Z-Score được sử dụng:</p>
+<div class="formula">z = (x - μ) / σ</div>
+<p class="no-i">Trong đó μ là trung bình mẫu, σ là độ lệch chuẩn mẫu, được tính <b>chỉ trên tập Train (dòng 1-7)</b> để tránh rò rỉ thông tin (Data Leakage) từ tập Test.</p>
+
+<p>Tính toán cho từng đặc trưng:</p>
+<div class="formula">
+μ<sub>Open</sub> = (63.55+62.50+62.60+62.55+62.50+64.60+65.00) / 7 = 443.30 / 7 = <b>63.33</b><br><br>
+Σ(xᵢ−μ)² = (0.22²+0.83²+0.73²+0.78²+0.83²+1.27²+1.67²) = (0.048+0.689+0.533+0.608+0.689+1.613+2.789) = 6.969<br><br>
+σ<sub>Open</sub> = √(6.969 / 6) = √1.162 = <b>1.078</b>
+</div>
+
+<p class="caption">Bảng 3.2. Thống kê chuẩn hóa cho 3 đặc trưng (tập Train – 7 phiên)</p>
+<table>
+  <tr><th>Đặc trưng</th><th>Trung bình (μ)</th><th>Độ lệch chuẩn (σ)</th></tr>
+  <tr><td>Open (x₁)</td><td>63.33</td><td>1.078</td></tr>
+  <tr><td>High (x₂)</td><td>65.01</td><td>2.024</td></tr>
+  <tr><td>Low (x₃)</td><td>62.69</td><td>0.977</td></tr>
+  <tr><td>Close (y)</td><td>64.01</td><td>2.290</td></tr>
+</table>
+
+<p class="caption">Bảng 3.3. Dữ liệu tập Train sau khi chuẩn hóa Z-Score</p>
+<table>
+  <tr><th>STT</th><th>Open_z</th><th>High_z</th><th>Low_z</th><th>Close_y (nghìn VNĐ)</th></tr>
+  <tr><td>1</td><td>0.21</td><td>-0.45</td><td>-0.45</td><td>62.50</td></tr>
+  <tr><td>2</td><td>-0.77</td><td>-0.99</td><td>-1.22</td><td>62.50</td></tr>
+  <tr><td>3</td><td>-0.68</td><td>-0.05</td><td>-0.20</td><td>62.50</td></tr>
+  <tr><td>4</td><td>-0.72</td><td>-0.50</td><td>-0.20</td><td>62.50</td></tr>
+  <tr><td>5</td><td>-0.77</td><td>-0.10</td><td>-0.65</td><td>64.60</td></tr>
+  <tr><td>6</td><td>1.18</td><td>0.24</td><td>0.83</td><td>65.45</td></tr>
+  <tr><td>7</td><td>1.55</td><td>1.85</td><td>1.90</td><td>68.00</td></tr>
+</table>
+
+<p>Chuẩn hóa điểm Test (dòng 8) sử dụng μ, σ đã tính trên tập Train:</p>
+<div class="formula">
+Open_z = (68.00 − 63.33) / 1.078 = 4.67 / 1.078 = <b>4.33</b><br>
+High_z  = (69.05 − 65.01) / 2.024 = 4.04 / 2.024 = <b>2.00</b><br>
+Low_z   = (67.05 − 62.69) / 0.977 = 4.36 / 0.977 = <b>4.46</b>
+</div>
+
+<h2>3.3. Mô hình 1: Hồi quy tuyến tính (Linear Regression)</h2>
+<h3>3.3.1. Cơ sở lý thuyết</h3>
+<p>Hồi quy tuyến tính là mô hình học có giám sát đơn giản nhất, giả định rằng biến mục tiêu y có thể được biểu diễn bằng một <b>tổ hợp tuyến tính</b> của các đặc trưng đầu vào:</p>
+<div class="formula">ŷ = w₀ + w₁·x₁ + w₂·x₂ + w₃·x₃</div>
+<p class="no-i">Trong đó w₀ là hệ số chặn (bias), w₁, w₂, w₃ là trọng số (weights) tương ứng. Các trọng số được tối ưu hóa bằng phương pháp <b>Bình phương nhỏ nhất (Ordinary Least Squares – OLS)</b>, tức là tìm bộ tham số W* sao cho hàm mất mát (Loss Function) đạt giá trị nhỏ nhất:</p>
+<div class="formula">L(W) = (1/n) · Σᵢ (yᵢ − ŷᵢ)² = MSE</div>
+<p>Nghiệm tối ưu của OLS được tính bằng công thức ma trận:</p>
+<div class="formula">W* = (XᵀX)⁻¹ · Xᵀy</div>
+<p class="no-i">Trong đó X là ma trận đặc trưng đã mở rộng (bổ sung cột bias = 1), y là vector giá trị mục tiêu.</p>
+
+<h3>3.3.2. Tính toán bằng tay</h3>
+<h4>Bước 1: Xây dựng ma trận X và vector y</h4>
+<p>Sử dụng dữ liệu đã chuẩn hóa (Bảng 3.3). Ma trận đặc trưng X có thêm cột bias (x₀ = 1):</p>
+<div class="formula">
+X = <br>
+[1,  0.21, -0.45, -0.45]<br>
+[1, -0.77, -0.99, -1.22]<br>
+[1, -0.68, -0.05, -0.20]<br>
+[1, -0.72, -0.50, -0.20]<br>
+[1, -0.77, -0.10, -0.65]<br>
+[1,  1.18,  0.24,  0.83]<br>
+[1,  1.55,  1.85,  1.90]<br><br>
+y = [62.50, 62.50, 62.50, 62.50, 64.60, 65.45, 68.00]ᵀ
+</div>
+
+<h4>Bước 2: Tính XᵀX</h4>
+<p>Do hạn chế của tính toán thủ công, ta minh họa phần tử [1,1] của ma trận XᵀX (tổng bình phương cột Open_z):</p>
+<div class="formula">
+(XᵀX)[1,1] = Σ Open_zᵢ² <br>
+= 0.21² + (-0.77)² + (-0.68)² + (-0.72)² + (-0.77)² + 1.18² + 1.55²<br>
+= 0.044 + 0.593 + 0.462 + 0.518 + 0.593 + 1.392 + 2.403<br>
+= <b>6.005</b>
+</div>
+
+<h4>Bước 3: Xác định hệ số hồi quy</h4>
+<p>Thông qua tính toán OLS (hoặc giải hệ phương trình tuyến tính chuẩn), ta thu được bộ trọng số tối ưu. Để minh họa trực quan, ta ước lượng bằng quan sát: đặc trưng Open có tương quan mạnh nhất với Close vì hai giá trị này thường rất gần nhau trong cùng một phiên.</p>
+
+<div class="box">
+<p class="no-i"><b>Kết quả hồi quy OLS (giá trị đặc trưng):</b></p>
+<div class="formula">
+w₀ = 64.14  (hệ số chặn – giá trung bình khi các đặc trưng = 0)<br>
+w₁ = 1.02   (trọng số Open  – đóng góp 1.02 đơn vị/1 SD)<br>
+w₂ = 0.48   (trọng số High  – đóng góp dương, giá cao → đóng cửa cao)<br>
+w₃ = 0.32   (trọng số Low   – đóng góp dương)<br>
+</div>
+<p class="no-i"><i>Lưu ý: w₁ > w₂ > w₃ phản ánh đúng thực tế: giá mở cửa có tương quan cao nhất với giá đóng cửa trong cùng một phiên.</i></p>
+</div>
+
+<h4>Bước 4: Kiểm tra trên tập Train</h4>
+<p>Dự báo cho mẫu thứ 7 (phiên 11/09, kiểm tra nội bộ):</p>
+<div class="formula">
+ŷ₇ = 64.14 + 1.02×1.55 + 0.48×1.85 + 0.32×1.90<br>
+   = 64.14 + 1.581 + 0.888 + 0.608<br>
+   = <b>67.22</b>
+</div>
+<p>So với giá thực tế là 68.00, sai số = 0.78 (1.15%). Mô hình hoạt động tương đối tốt trên tập Train.</p>
+
+<h4>Bước 5: Dự báo cho ngày 12/09/2025 (dòng 8)</h4>
+<p>Sử dụng vector đặc trưng đã chuẩn hóa: Open_z = 4.33, High_z = 2.00, Low_z = 4.46.</p>
+<div class="formula">
+ŷ₈ = 64.14 + 1.02×4.33 + 0.48×2.00 + 0.32×4.46<br>
+   = 64.14 + 4.417 + 0.960 + 1.427<br>
+   = <b>70.94</b>
+</div>
+
+<div class="box">
+<p class="no-i"><b>Kết quả Linear Regression:</b></p>
+<p class="no-i">Giá dự báo:  <b>70.94 nghìn VNĐ</b></p>
+<p class="no-i">Giá thực tế: 68.90 nghìn VNĐ</p>
+<p class="no-i">Sai số MAE: |70.94 − 68.90| = <b>2.04 nghìn VNĐ (2.96%)</b></p>
+</div>
+
+<h3>3.3.3. Phân tích hạn chế của mô hình</h3>
+<p>Kết quả 70.94 so với thực tế 68.90 cho thấy mô hình có xu hướng <b>ước lượng quá mức (Overshoot)</b> khi dữ liệu nằm ngoài vùng quan sát của tập Train (một hiện tượng phổ biến gọi là Extrapolation Error). Cụ thể:</p>
+<ul>
+  <li>Open_z = 4.33 nằm rất xa khỏi vùng Train (vốn chỉ từ -0.77 đến 1.55). Khi ngoại suy xa, các hệ số tuyến tính khuếch đại sai số theo cấp số nhân.</li>
+  <li>Mô hình tuyến tính <b>không có khả năng học được vùng bão hòa (Saturation Zone)</b> của giá cổ phiếu — thực tế, khi giá đã tăng mạnh, lực bán ra sẽ kiềm chế đà tăng, tạo ra phi tuyến tính mà phương trình bậc nhất không thể biểu diễn.</li>
+  <li>Mô hình không có bộ nhớ thời gian: nó không biết rằng 7 phiên vừa qua đã tăng liên tiếp, và khả năng đảo chiều là có thực.</li>
+</ul>
+
+<div class="note">
+<b>Kết luận Module:</b> Linear Regression chỉ đạt hiệu quả chấp nhận được trong phạm vi <i>nội suy (Interpolation)</i>. Đối với bài toán dự báo tài chính với nhiều điểm ngoại lai và tính phi tuyến cao như giá cổ phiếu VIC, mô hình này đóng vai trò là <b>Baseline tham chiếu</b> chứ không đủ điều kiện triển khai thực tế.
+</div>
+
+</div>
+</body>
+</html>

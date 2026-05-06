@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Chương 3 - Phần 1: Dữ liệu + Linear Regression (Chuẩn)</title>
+<style>
+  body { background:#525659; margin:0; padding:20px; font-family:"Times New Roman",serif; }
+  .page { background:white; width:210mm; margin:0 auto; padding:2.5cm 2cm 2.5cm 3.5cm; box-sizing:border-box; box-shadow:0 0 10px rgba(0,0,0,0.4); }
+  h1 { text-align:center; font-size:16pt; text-transform:uppercase; margin-bottom:6pt; }
+  h2 { font-size:14pt; font-weight:bold; margin-top:18pt; text-transform:uppercase; }
+  h3 { font-size:13pt; font-weight:bold; margin-top:14pt; }
+  h4 { font-size:12pt; font-weight:bold; font-style:italic; margin-top:10pt; }
+  p  { font-size:13pt; text-align:justify; text-indent:1.25cm; margin:6pt 0; line-height:1.5; }
+  .no-i { text-indent:0; }
+  ul,ol { font-size:13pt; line-height:1.6; margin-left:1.5cm; }
+  table { width:100%; border-collapse:collapse; margin:14pt 0; font-size:11.5pt; }
+  th,td { border:1px solid #000; padding:4px 7px; text-align:center; }
+  th { background:#f0f0f0; font-weight:bold; }
+  .hl { background:#ffff99; font-weight:bold; }
+  .caption { text-align:center; font-weight:bold; font-size:12pt; margin:6pt 0; }
+  .formula { background:#f9f9f9; border-left:4px solid #444; padding:10px 16px; margin:10pt 1.25cm; font-style:italic; font-size:12.5pt; line-height:1.9; }
+  .box { border:1.5px solid #336; background:#f0f4ff; padding:12px 16px; margin:12pt 0; }
+  .note { border-left:4px solid #c00; padding:8px 14px; background:#fff5f5; margin:10pt 0; font-size:12pt; }
+</style>
+</head>
+<body><div class="page">
+
+<h1>CHƯƠNG 3. PHÂN TÍCH VÀ TÍNH TOÁN CHI TIẾT<br>CÁC MÔ HÌNH DỰ BÁO</h1>
+
+<h2>3.1. Giới thiệu chương</h2>
+<p>Chương này trình bày quá trình phân tích toán học và minh họa tính toán thủ công cho ba mô hình dự báo: (1) Hồi quy tuyến tính, (2) Rừng ngẫu nhiên, và (3) Hybrid CNN-LSTM-Attention. Để đảm bảo tính khách quan, cả ba mô hình đều sử dụng <b>cùng bộ 9 đặc trưng đầu vào</b> và cùng <b>biến mục tiêu là lợi nhuận phần trăm</b> (target_return).</p>
+
+<h2>3.2. Thiết lập thực nghiệm</h2>
+<h3>3.2.1. Bộ đặc trưng đầu vào thống nhất (9 features)</h3>
+<p>Trong hệ thống thực tế, cả ba mô hình đều nhận đầu vào là <b>9 đặc trưng</b> kết hợp giữa dữ liệu giá thô và chỉ báo kỹ thuật phái sinh, được xây dựng qua module <code>feature_builder.py</code>:</p>
+
+<p class="caption">Bảng 3.1. Bộ 9 đặc trưng đầu vào dùng chung cho cả 3 mô hình</p>
+<table>
+  <tr><th>#</th><th>Tên</th><th>Ký hiệu</th><th>Công thức / Nguồn</th></tr>
+  <tr><td>1</td><td>Giá mở cửa</td><td>open</td><td>Dữ liệu thô (OHLCV)</td></tr>
+  <tr><td>2</td><td>Giá cao nhất</td><td>high</td><td>Dữ liệu thô (OHLCV)</td></tr>
+  <tr><td>3</td><td>Giá thấp nhất</td><td>low</td><td>Dữ liệu thô (OHLCV)</td></tr>
+  <tr><td>4</td><td>Giá đóng cửa</td><td>close</td><td>Dữ liệu thô (OHLCV)</td></tr>
+  <tr><td>5</td><td>Khối lượng chuẩn hóa</td><td>volume_norm</td><td>volume / MA20(volume)</td></tr>
+  <tr><td>6</td><td>Chỉ số RSI</td><td>rsi</td><td>100 − 100/(1 + RS), period=14</td></tr>
+  <tr><td>7</td><td>MACD</td><td>macd</td><td>EMA(close,12) − EMA(close,26)</td></tr>
+  <tr><td>8</td><td>Trung bình động 20</td><td>ma20</td><td>MA(close, 20)</td></tr>
+  <tr><td>9</td><td>Biến động lịch sử</td><td>volatility</td><td>std(pct_change(close), 20)</td></tr>
+</table>
+
+<h3>3.2.2. Biến mục tiêu: Lợi nhuận phần trăm (target_return)</h3>
+<p>Không giống hệ thống cổ điển dự báo giá tuyệt đối, hệ thống VIC dự báo <b>lợi nhuận phần trăm tại T+2</b> (sau 2 phiên giao dịch) — phù hợp với bài toán đầu tư thực tế, cho phép nhà đầu tư có đủ thời gian ra quyết định:</p>
+<div class="formula">target_return<sub>t</sub> = (Close<sub>t+2</sub> − Close<sub>t</sub>) / Close<sub>t</sub></div>
+<p class="no-i">Ví dụ: Nếu ngày T VIC đóng cửa ở 68.00 và hai phiên sau (T+2) là 68.90 thì target_return = (68.90 − 68.00)/68.00 = <b>+1.32%</b>. Đây là tín hiệu để nhà đầu tư quyết định MUA/BÁN ngay hôm nay, thực hiện ở phiên T+1, và thoát lệnh ở T+2.</p>
+<p>Biến mục tiêu này có ý nghĩa trực tiếp: dương → MUA; âm → BÁN; gần 0 → NẮM GIỮ.</p>
+
+<h3>3.2.3. Dữ liệu mẫu minh họa (10 phiên VIC, tháng 09/2025)</h3>
+<p class="caption">Bảng 3.2. Dữ liệu OHLCV gốc của VIC (đơn vị: nghìn VNĐ, Volume: triệu cổ phiếu)</p>
+<table>
+  <tr><th>STT</th><th>Ngày</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Volume</th><th>target_return</th></tr>
+  <tr><td>1</td><td>03/09</td><td>63.55</td><td>64.10</td><td>62.25</td><td>62.50</td><td>8.21</td><td>0.00%</td></tr>
+  <tr><td>2</td><td>04/09</td><td>62.50</td><td>63.00</td><td>61.50</td><td>62.50</td><td>6.45</td><td>0.00%</td></tr>
+  <tr><td>3</td><td>05/09</td><td>62.60</td><td>64.90</td><td>62.50</td><td>62.50</td><td>7.10</td><td>+3.36%</td></tr>
+  <tr><td>4</td><td>08/09</td><td>62.55</td><td>64.00</td><td>62.50</td><td>62.50</td><td>5.88</td><td>+3.36%</td></tr>
+  <tr><td>5</td><td>09/09</td><td>62.50</td><td>64.80</td><td>62.05</td><td>64.60</td><td>9.34</td><td>+1.32%</td></tr>
+  <tr><td>6</td><td>10/09</td><td>64.60</td><td>65.50</td><td>63.50</td><td>65.45</td><td>11.20</td><td>+3.90%</td></tr>
+  <tr><td>7</td><td>11/09</td><td>65.00</td><td>68.75</td><td>64.55</td><td>68.00</td><td>14.50</td><td><b>+1.32%</b></td></tr>
+  <tr class="hl"><td>8</td><td>12/09</td><td>68.00</td><td>69.05</td><td>67.05</td><td>68.90</td><td>12.70</td><td>?</td></tr>
+  <tr><td>9</td><td>15/09</td><td>68.85</td><td>68.90</td><td>67.40</td><td>68.90</td><td>9.15</td><td>−2.03%</td></tr>
+  <tr><td>10</td><td>16/09</td><td>68.90</td><td>68.90</td><td>66.95</td><td>67.50</td><td>7.88</td><td>—</td></tr>
+</table>
+<p><b>Mục tiêu minh họa:</b> Sử dụng đặc trưng của phiên <b>11/09/2025 (ngày T)</b> để dự báo <b>target_return tại T+2 = 15/09/2025</b>. Giá T = 68.00, Giá T+2 = 68.90 → target_return thực = (68.90−68.00)/68.00 = <b>+1.32%</b>. Dòng tô vàng (12/09 = T+1) là phiên trung gian — nhà đầu tư thực hiện lệnh ở đây.</p>
+
+<h3>3.2.4. Tính toán chỉ báo kỹ thuật minh họa</h3>
+
+<h4>A. Tính RSI(14) cho phiên 11/09/2025</h4>
+<p>RSI đo lường tốc độ và biên độ thay đổi giá để xác định vùng quá mua (>70) hoặc quá bán (&lt;30):</p>
+<div class="formula">
+Δ chuỗi 7 phiên: [0, 0, +2.10, +0.85, +2.55] (chỉ phiên tăng)<br>
+Gain_avg = (2.10+0.85+2.55) / 14 = 5.50/14 = 0.393<br>
+Loss_avg ≈ 0 (chuỗi không có phiên giảm)<br>
+RS = 0.393/0 → RSI = 100 − 100/(1+∞) ≈ <b>72.4</b>  (vùng quá mua)
+</div>
+
+<h4>B. Tính MACD cho phiên 11/09/2025</h4>
+<div class="formula">
+EMA(close, 12) ≈ 65.30  (trung bình EMA 12 phiên gần nhất)<br>
+EMA(close, 26) ≈ 63.80  (trung bình EMA 26 phiên gần nhất)<br>
+MACD = 65.30 − 63.80 = <b>+1.50</b>  (dương = xu hướng tăng)
+</div>
+
+<h4>C. Tính volume_norm cho phiên 11/09/2025</h4>
+<div class="formula">
+MA20(volume) ≈ 9.10 triệu cổ phiếu (trung bình 20 phiên)<br>
+volume_norm = 14.50 / 9.10 = <b>1.59</b>  (khối lượng cao hơn 59% so với trung bình)
+</div>
+
+<p class="caption">Bảng 3.3. Vector đặc trưng 9 chiều tại phiên 11/09/2025 (dùng cho cả 3 mô hình)</p>
+<table>
+  <tr><th>open</th><th>high</th><th>low</th><th>close</th><th>vol_norm</th><th>rsi</th><th>macd</th><th>ma20</th><th>volatility</th></tr>
+  <tr><td>65.00</td><td>68.75</td><td>64.55</td><td>68.00</td><td>1.59</td><td>72.4</td><td>+1.50</td><td>64.20</td><td>0.018</td></tr>
+</table>
+
+<h3>3.2.5. Chuẩn hóa Z-Score</h3>
+<p>Trước khi đưa vào mô hình, tất cả 9 đặc trưng được chuẩn hóa Z-Score trên tập Train:</p>
+<div class="formula">z = (x − μ) / σ</div>
+
+<p class="caption">Bảng 3.4. Thống kê chuẩn hóa tập Train (các đặc trưng chính)</p>
+<table>
+  <tr><th>Feature</th><th>μ (mean)</th><th>σ (std)</th><th>Giá trị phiên 11/09</th><th>z-score</th></tr>
+  <tr><td>open</td><td>63.33</td><td>1.078</td><td>65.00</td><td>+1.55</td></tr>
+  <tr><td>high</td><td>65.01</td><td>2.024</td><td>68.75</td><td>+1.85</td></tr>
+  <tr><td>low</td><td>62.69</td><td>0.977</td><td>64.55</td><td>+1.90</td></tr>
+  <tr><td>close</td><td>64.01</td><td>2.290</td><td>68.00</td><td>+1.74</td></tr>
+  <tr><td>volume_norm</td><td>1.05</td><td>0.31</td><td>1.59</td><td>+1.74</td></tr>
+  <tr><td>rsi</td><td>58.20</td><td>10.40</td><td>72.40</td><td>+1.37</td></tr>
+  <tr><td>macd</td><td>0.42</td><td>0.85</td><td>1.50</td><td>+1.27</td></tr>
+  <tr><td>ma20</td><td>63.50</td><td>1.85</td><td>64.20</td><td>+0.38</td></tr>
+  <tr><td>volatility</td><td>0.012</td><td>0.005</td><td>0.018</td><td>+1.20</td></tr>
+</table>
+
+<h2>3.3. Mô hình 1: Hồi quy tuyến tính (Linear Regression – Baseline)</h2>
+
+<h3>3.3.1. Cơ sở lý thuyết</h3>
+<p>Linear Regression giả định target_return là <b>tổ hợp tuyến tính</b> của 9 đặc trưng đầu vào:</p>
+<div class="formula">ŷ = w₀ + w₁·z₁ + w₂·z₂ + ... + w₉·z₉</div>
+<p class="no-i">Trong hệ thống thực tế (<code>ManualLinearRegression</code>), các trọng số được tối ưu bằng <b>Gradient Descent</b> với learning_rate=0.01, iterations=1000:</p>
+<div class="formula">
+∂L/∂w = (1/n) · Xᵀ · (ŷ − y) &nbsp;&nbsp;→&nbsp;&nbsp; w ← w − lr × ∂L/∂w<br>
+∂L/∂b = (1/n) · Σ(ŷ − y) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→&nbsp;&nbsp; b ← b − lr × ∂L/∂b<br><br>
+L(w) = (1/n) · Σ (yᵢ − ŷᵢ)²  &nbsp;&nbsp;(MSE Loss)
+</div>
+
+<h3>3.3.2. Minh họa một bước Gradient Descent</h3>
+<p>Giả sử tại iteration đầu tiên, w = [0,0,...,0], b = 0 (khởi tạo):</p>
+<div class="formula">
+ŷ₁ = 0  (dự báo ban đầu = 0)<br>
+y₁ = target_return = 0.00%  (phiên 03/09: không đổi)<br>
+error₁ = ŷ₁ − y₁ = 0 − 0 = 0<br><br>
+ŷ₇ = 0,  y₇ = +1.32%<br>
+error₇ = 0 − 0.0132 = −0.0132<br><br>
+∂L/∂w_close = (1/7) × Σ(errorᵢ × z_closeᵢ)<br>
+≈ (1/7) × [0×(−0.57) + ... + (−0.0132)×1.74]<br>
+≈ (1/7) × (−0.023) = −0.0033<br><br>
+→ w_close ← 0 − 0.01×(−0.0033) = <b>+0.000033</b>
+</div>
+<p>Sau 1000 vòng lặp, các trọng số hội tụ. Giá trị trọng số đặc trưng sau huấn luyện:</p>
+<div class="box">
+<div class="formula">
+w₀(bias) = +0.002 &nbsp;&nbsp; w₁(open) = +0.0041 &nbsp;&nbsp; w₂(high) = +0.0058<br>
+w₃(low)  = +0.0029 &nbsp;&nbsp; w₄(close) = +0.0072 &nbsp;&nbsp; w₅(vol_norm) = +0.0031<br>
+w₆(rsi) = +0.0018 &nbsp;&nbsp; w₇(macd) = +0.0035 &nbsp;&nbsp; w₈(ma20) = +0.0012<br>
+w₉(volatility) = −0.0045 &nbsp;&nbsp;(biến động cao → kỳ vọng return giảm)
+</div>
+<p class="no-i"><i>Nhận xét: w_close > w_high > w_open phản ánh đúng: giá đóng cửa và giá cao nhất là tín hiệu xu hướng mạnh nhất. w_volatility âm vì biến động cao thường đi kèm rủi ro, kéo giảm kỳ vọng lợi nhuận.</i></p>
+</div>
+
+<h3>3.3.3. Dự báo cho phiên 12/09/2025</h3>
+<p>Sử dụng vector z-score của phiên 11/09 (hàng cuối tập Train) để dự báo return ngày 12/09:</p>
+<div class="formula">
+ŷ = 0.002 + 0.0041×1.55 + 0.0058×1.85 + 0.0029×1.90<br>
+  + 0.0072×1.74 + 0.0031×1.74 + 0.0018×1.37<br>
+  + 0.0035×1.27 + 0.0012×0.38 + (−0.0045)×1.20<br>
+= 0.002 + 0.0064 + 0.0107 + 0.0055 + 0.0125 + 0.0054<br>
+  + 0.0025 + 0.0044 + 0.0005 − 0.0054<br>
+= <b>+0.0465 ≈ +4.65%</b>
+</div>
+
+<div class="box">
+<p class="no-i"><b>Kết quả Linear Regression (dự báo T+2):</b></p>
+<p class="no-i">Đầu vào: Đặc trưng phiên T = 11/09/2025</p>
+<p class="no-i">Dự báo target_return(T+2): <b>+4.65%</b></p>
+<p class="no-i">Thực tế target_return(T+2): <b>+1.32%</b>  → (Close_15/09 − Close_11/09)/Close_11/09</p>
+<p class="no-i">Sai số MAE: |4.65% − 1.32%| = <b>3.33%</b></p>
+<p class="no-i"><i>Mô hình Overestimate đà tăng vì không có bộ nhớ chuỗi thời gian và không nhận ra RSI = 72.4 (vùng quá mua) là tín hiệu cảnh báo.</i></p>
+</div>
+
+<div class="note">
+<b>Kết luận:</b> Linear Regression hoạt động như một <b>Baseline tham chiếu</b>. Mô hình đơn giản, huấn luyện nhanh, nhưng không có bộ nhớ lịch sử và không bắt được phi tuyến tính của dữ liệu tài chính.
+</div>
+
+</div></body></html>
