@@ -22,7 +22,7 @@ async def trigger_forecast_pipeline():
     Thực thi 1 lần pipeline cập nhật giá, tin tức và dự báo mô hình để kết luận tự động T+2.
     """
     svc = PipelineService()
-    result = svc.run_pipeline()
+    result = await svc.run_pipeline()
     return PipelineResponse(success=True, data=result)
 
 @router.post("/forecast", response_model=ForecastResponse)
@@ -33,11 +33,11 @@ async def create_forecast(
     """
     Tạo dự báo xác suất cho cổ phiếu VIC.
     """
-    result = service.predict(
+    result = await service.predict(
         horizon=request.horizon,
-        target_return=request.target_return,
-        alpha=request.alpha,
-        beta=request.beta
+        target_return=request.target_return or 0.05,
+        alpha=request.alpha or 0.05,
+        beta=request.beta or 0.2
     )
     return ForecastResponse(success=True, data=result)
 
@@ -50,11 +50,11 @@ async def backfill_forecast(
     """
     Tạo dự báo bù cho một ngày trong quá khứ (Backfill).
     """
-    result = service.predict(
+    result = await service.predict(
         horizon=request.horizon,
-        target_return=request.target_return,
-        alpha=request.alpha,
-        beta=request.beta,
+        target_return=request.target_return or 0.05,
+        alpha=request.alpha or 0.05,
+        beta=request.beta or 0.2,
         manual_sentiment=request.manual_sentiment,
         base_date=request.base_date,
         force_refresh=True # Luôn chạy mới khi backfill
@@ -69,7 +69,7 @@ async def get_multi_horizon_forecast(
 ):
     """Lấy dự báo cho nhiều khung thời gian (1, 3, 5, 7, 10, 14, 21 ngày)."""
     horizons = [1, 3, 5, 7, 10, 14, 21]
-    results = service.predict_multi_horizon(horizons=horizons, target_return=target_return)
+    results = await service.predict_multi_horizon(horizons=horizons, target_return=target_return)
     return MultiHorizonResponse(success=True, data={"horizons": results})
 
 

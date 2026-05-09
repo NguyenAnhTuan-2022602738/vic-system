@@ -74,7 +74,7 @@ class NewsRepository:
             logger.info(f"💾 Tin tức: +{saved_count} mới, ~{updated_count} cập nhật, -{skipped_count} trùng bài.")
         return saved_count + updated_count
 
-    async def get_latest_news(self, limit: int = 10, page: int = 1, category: str = None, hours_limit: int = None):
+    async def get_latest_news(self, limit: int = 10, page: int = 1, category: str | None = None, hours_limit: int | None = None):
         """Lấy tin tức mới nhất từ DB, có hỗ trợ phân trang (Pagination)."""
         db = mongodb.get_db()
         collection = db[self.collection_name]

@@ -25,7 +25,7 @@ async def chat_with_ai(
         # Nếu người dùng không gửi bối cảnh, hãy tự lấy từ hệ thống
         context = request.context
         if not context:
-            context = forecast_service.get_context_summary()
+            context = await forecast_service.get_context_summary()
             
         answer = assistant_service.chat(request.message, context)
         return ChatResponse(answer=answer)

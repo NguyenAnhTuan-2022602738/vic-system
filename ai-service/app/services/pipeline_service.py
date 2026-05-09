@@ -13,7 +13,7 @@ class PipelineService:
         self.market_service = MarketDataService()
         self.forecast_service = ForecastService()
 
-    def run_pipeline(self) -> dict:
+    async def run_pipeline(self) -> dict:
         """Thực thi toàn bộ luồng T+2 Forecast Pipeline."""
         logger.info("[Pipeline] Bắt đầu chạy T+2 Forecast Pipeline...")
 
@@ -24,7 +24,7 @@ class PipelineService:
         # 2. Sử dụng ForecastService để chạy dự báo T+2 (horizon=2)
         # ForecastService đã xử lý: build_features, scaling, LSTM, Sentiment Fusion, Risk VaR.
         logger.info("[Pipeline] Bước 2: Chạy ForecastService Inference (Horizon=2, Force Refresh)...")
-        forecast_data = self.forecast_service.predict(horizon=2, target_return=0.05, force_refresh=True)
+        forecast_data = await self.forecast_service.predict(horizon=2, target_return=0.05, force_refresh=True)
 
         # 3. Lấy giá đóng cửa gần nhất từ CSV
         df_history = self.market_service.get_vic_history()

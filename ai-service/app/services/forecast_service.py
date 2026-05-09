@@ -32,7 +32,7 @@ class ForecastService:
     """Điều phối pipeline dự báo đa mô hình."""
 
     def __init__(self):
-        self.model: HybridConditionalLSTM | None = None
+        self.model: HybridConditionalLSTM = HybridConditionalLSTM(input_size=len(FEATURE_COLS))
         self.scaler: FeatureScaler | None = None
         self.market_service = MarketDataService()
         self.news_service = NewsService()
@@ -58,7 +58,6 @@ class ForecastService:
     def _load_model(self):
         """Tải mô hình LSTM Hybrid đã train từ ổ đĩa."""
         try:
-            self.model = HybridConditionalLSTM(input_size=len(FEATURE_COLS))
             if os.path.exists(settings.MODEL_PATH):
                 state_dict = torch.load(
                     settings.MODEL_PATH, map_location="cpu", weights_only=True
@@ -124,11 +123,11 @@ class ForecastService:
 
             # 1. Evaluate LR
             lr_preds = self.lr_model.predict(X_test_scaled)
-            lr_mae = calculate_mae(y_test, lr_preds)
+            lr_mae = calculate_mae(np.asarray(y_test), np.asarray(lr_preds))
 
             # 2. Evaluate RF
             rf_preds = self.rf_model.predict(X_test_scaled)
-            rf_mae = calculate_mae(y_test, rf_preds)
+            rf_mae = calculate_mae(np.asarray(y_test), np.asarray(rf_preds))
 
             # Save normalization params for inference
             self.manual_norm = {"mean": X_mean, "std": X_std}
@@ -153,7 +152,7 @@ class ForecastService:
         except Exception as e:
             logger.error(f"Error training manual models: {str(e)}")
 
-    def _get_inference_data(self, base_date: str = None) -> tuple[torch.Tensor, np.ndarray]:
+    def _get_inference_data(self, base_date: str | None = None):
         """Chuẩn bị dữ liệu cho inference (Hỗ trợ dự báo quá khứ)."""
         try:
             # Nếu có base_date, chỉ lấy dữ liệu dừng tại đó
@@ -182,7 +181,7 @@ class ForecastService:
             logger.error(f"Error preparing inference data: {e}")
             return torch.randn(1, 60, len(FEATURE_COLS)), np.zeros((1, 8))
 
-    def predict(self, horizon: int, target_return: float = 0.05, alpha: float = 0.3, beta: float = 0.2, force_refresh: bool = False, manual_sentiment: float = None, base_date: str = None) -> dict:
+    async def predict(self, horizon: int, target_return: float = 0.05, alpha: float = 0.3, beta: float = 0.2, force_refresh: bool = False, manual_sentiment: float | None = None, base_date: str | None = None) -> dict:
         """Dự báo đa phương thức (Technical + Sentiment) - Hỗ trợ Backfill."""
         cache_key = f"predict_{horizon}_{target_return}_{alpha}_{beta}_{base_date or 'latest'}"
         now = time.time()
@@ -215,14 +214,14 @@ class ForecastService:
             news_list = []
             logger.info(f"[ForecastService] Using Manual Sentiment for Scenario: {avg_sentiment}")
         else:
-            # Lấy TẤT CẢ tin tức trong 48 giờ qua để tính toán sentiment tổng hợp
-            news_result = self.news_service.fetch_and_analyze(limit=100, hours_limit=48)
-            news_list = news_result.get("news", [])
+            # Lấy TẤT CẢ tin tức trong 48 giờ qua để tính toán sentiment tổng hợp (Dùng await)
+            news_result: dict = await self.news_service.fetch_and_analyze(limit=100, hours_limit=48)
+            news_list: list[dict] = news_result.get("news", [])
             
             if news_list:
                 # Tính toán lại trung bình từ danh sách đã lọc và áp Time Decay
-                total_weighted_score = sum(item["sentiment_score"] * item["impact_weight"] for item in news_list)
-                total_impact = sum(item["impact_weight"] for item in news_list)
+                total_weighted_score = sum(float(item["sentiment_score"]) * float(item["impact_weight"]) for item in news_list)
+                total_impact = sum(float(item["impact_weight"]) for item in news_list)
                 avg_sentiment = total_weighted_score / total_impact if total_impact > 0 else 0.0
                 avg_impact = total_impact / len(news_list) if len(news_list) > 0 else 0.0
             else:
@@ -296,7 +295,7 @@ class ForecastService:
         self._cache[cache_key] = (result, now)
         return result
 
-    def predict_multi_horizon(self, horizons: list[int], target_return: float = 0.05) -> list[dict]:
+    async def predict_multi_horizon(self, horizons: list[int], target_return: float = 0.05) -> list[dict]:
         """Dự báo cho nhiều khung thời gian cùng lúc - Có cache."""
         cache_key = f"multi_{tuple(horizons)}_{target_return}"
         now = time.time()
@@ -308,7 +307,7 @@ class ForecastService:
 
         results = []
         for h in horizons:
-            results.append(self.predict(horizon=h, target_return=target_return))
+            results.append(await self.predict(horizon=h, target_return=target_return))
             
         self._cache[cache_key] = (results, now)
         return results
@@ -434,17 +433,23 @@ class ForecastService:
             traceback.print_exc()
             return {"symbol": "VIC", "history": [], "metrics": self._empty_metrics()}
 
-        except Exception as e:
-            logger.error(f"Error in real Backtest: {e}")
-            import traceback
-            traceback.print_exc()
-            return {"symbol": "VIC", "history": [], "metrics": self._empty_metrics()}
+    @staticmethod
+    def _empty_metrics() -> dict:
+        """Trả về metrics rỗng khi không đủ dữ liệu."""
+        return {
+            "total_trades": 0,
+            "win_rate": 0.0,
+            "profit_factor": 0.0,
+            "max_drawdown": 0.0,
+            "sharpe_ratio": 0.0,
+            "total_return": 0.0
+        }
 
-    def get_context_summary(self) -> str:
+    async def get_context_summary(self) -> str:
         """Tổng hợp bối cảnh hiện tại của hệ thống để cung cấp cho AI Assistant."""
         try:
-            # 1. Lấy dự báo mới nhất
-            forecast = self.predict(horizon=2, force_refresh=False)
+            # 1. Lấy dự báo mới nhất (Dùng await)
+            forecast = await self.predict(horizon=2, force_refresh=False)
             
             # 2. Lấy giá hiện tại
             history = self.market_service.get_vic_history()

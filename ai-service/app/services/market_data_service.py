@@ -13,14 +13,16 @@ from app.domain.forecasting.feature_builder import compute_rsi, compute_macd, co
 class MarketDataService:
     """Xử lý việc lấy dữ liệu lịch sử và sinh dữ liệu giả lập."""
 
-    CSV_PATH = r"c:\Users\cuida\Documents\DATN\vic-system\ai-service\data\raw\vic_price.csv"
+    # Sử dụng đường dẫn tương đối để đảm bảo tính di động
+    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    CSV_PATH = os.path.join(_BASE_DIR, "data", "raw", "vic_price.csv")
 
     def __init__(self):
         self._df_cache = None
         self._last_load_time = 0
         self._cache_expiry = 60  # 1 phút cache DataFrame
 
-    def get_vic_history(self, start_date: str = "2024-01-01", end_date: str = None) -> pd.DataFrame:
+    def get_vic_history(self, start_date: str = "2024-01-01", end_date: str | None = None) -> pd.DataFrame:
         """Lấy dữ liệu lịch sử VIC đảm bảo đã được update tới T-1 hoặc mốc end_date."""
         import time
         now = time.time()
@@ -35,7 +37,7 @@ class MarketDataService:
             df = pd.read_csv(self.CSV_PATH)
             df['date'] = pd.to_datetime(df['date'])
             self._df_cache = df.copy()
-            self._last_load_time = now
+            self._last_load_time = int(now)
 
         # Lọc theo start_date
         df = df[df['date'] >= start_date]
@@ -45,7 +47,8 @@ class MarketDataService:
             end_dt = pd.to_datetime(end_date)
             df = df[df['date'] <= end_dt]
             
-        df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+        # Explicitly cast to datetime to satisfy linter
+        df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
         return df
 
     def update_csv_if_needed(self):
@@ -86,8 +89,9 @@ class MarketDataService:
                 
                 logger.info(f"Dữ liệu CSV đang dừng ở {last_date.strftime('%Y-%m-%d')}. Đang lấy từ {last_date_str} đến {end_date_str}...")
                 
-                # Khởi tạo Vnstock (Bản 3.5.1+ tự động chọn nguồn tối ưu nhất)
-                stock = Vnstock().stock(symbol="VIC")
+                # Khởi tạo Vnstock (Đảm bảo tương thích với bản 3.x)
+                vn = Vnstock()
+                stock = vn.stock(symbol="VIC", source="VCI")  # type: ignore
                 df_new = stock.quote.history(start=last_date_str, end=end_date_str, interval="1D")
                 
                 if df_new is not None and not df_new.empty:
@@ -113,7 +117,7 @@ class MarketDataService:
                         df = df_new
                         
                     df = df.drop_duplicates(subset=['date']).sort_values('date')
-                    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+                    df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
                     
                     keep_cols = ['date', 'open', 'high', 'low', 'close', 'volume']
                     df = df[[c for c in keep_cols if c in df.columns]]
@@ -133,7 +137,7 @@ class MarketDataService:
             logger.error(traceback.format_exc())
             return False
 
-    def get_enriched_history(self, start_date: str = "2024-01-01", end_date: str = None) -> list:
+    def get_enriched_history(self, start_date: str = "2024-01-01", end_date: str | None = None) -> list:
         """Lấy dữ liệu và bổ sung các chỉ báo kỹ thuật (hỗ trợ quá khứ)."""
         df = self.get_vic_history(start_date, end_date)
         if df.empty:

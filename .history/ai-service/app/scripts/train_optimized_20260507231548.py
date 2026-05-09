@@ -20,12 +20,12 @@ from app.core.config import settings
 def train_model():
     print("🚀 Bắt đầu quy trình huấn luyện LSTM Hybrid Siêu cấp...", flush=True)
     # df_raw = df_raw[df_raw['date'] >= "2021-01-01"]
-    # Sử dụng đường dẫn tương đối để đảm bảo tính di động
-    _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    CSV_PATH = os.path.abspath(os.path.join(_SCRIPT_DIR, "../../data/raw/vic_price.csv"))
+    # CSV_PATH = r"c:\Users\cuida\Documents\DATN\vic-system\ai-service\data\raw\vic_price.csv"
+    print("🔍 DEBUG: Đọc dữ liệu trực tiếp từ CSV...", flush=True)
+    CSV_PATH = r".\data\raw\vic_price.csv"
     df_raw = pd.read_csv(CSV_PATH)
     df_raw['date'] = pd.to_datetime(df_raw['date'])
-    df_raw = df_raw[df_raw['date'] >= pd.to_datetime("2015-01-01")]
+    df_raw = df_raw[df_raw['date'] >= "2015-01-01"]
     print(f"✅ DEBUG: Đã lấy {len(df_raw)} phiên giao dịch.", flush=True)
     
     print("🔍 DEBUG: Đang xây dựng đặc trưng...", flush=True)

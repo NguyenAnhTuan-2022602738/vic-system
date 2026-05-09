@@ -2,7 +2,9 @@ import pandas as pd
 import os
 import time
 
-CSV_PATH = r"c:\Users\cuida\Documents\DATN\vic-system\ai-service\data\raw\vic_price.csv"
+# Sử dụng đường dẫn tương đối dựa trên vị trí file hiện tại
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "data", "raw", "vic_price.csv")
 
 def test_load():
     print(f"DEBUG: Checking {CSV_PATH}")

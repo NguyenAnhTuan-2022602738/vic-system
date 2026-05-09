@@ -49,13 +49,13 @@ async def get_latest_news(
     limit: int = 5,
     page: int = 1,
     force_refresh: bool = False,
-    hours: int = None,
+    hours: int | None = None,
     service: NewsService = Depends(get_news_service),
 ):
     """
     Lấy và phân tích tin tức VIC mới nhất (Hỗ trợ phân trang).
     """
-    results = service.fetch_and_analyze(
+    results = await service.fetch_and_analyze(
         limit=limit, 
         page=page, 
         force_refresh=force_refresh,
@@ -95,14 +95,14 @@ async def get_sandbox_adjusted_forecast(
         logger.info(f"[Sandbox] Bắt đầu chạy kịch bản: {request.news_text[:50]}...")
         
         # 1. Lấy dự báo kỹ thuật gốc (Original) - dùng cache nếu có
-        original = forecast_service.predict(horizon=request.horizon, force_refresh=False)
+        original = await forecast_service.predict(horizon=request.horizon, force_refresh=False)
         
         # 2. Phân tích kịch bản tin tức
         sentiment_result = news_service.analyze(text=request.news_text)
         manual_score = sentiment_result["sentiment_score"]
         
         # 3. Chạy dự báo đã điều chỉnh (Adjusted)
-        adjusted = forecast_service.predict(
+        adjusted = await forecast_service.predict(
             horizon=request.horizon,
             manual_sentiment=manual_score
         )

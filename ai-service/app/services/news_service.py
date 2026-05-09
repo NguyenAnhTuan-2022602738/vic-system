@@ -70,12 +70,11 @@ class NewsService:
             
         return news_items
 
-    def fetch_and_analyze(self, limit=5, page=1, force_refresh=False, hours_limit=None):
+    async def fetch_and_analyze(self, limit: int = 5, page: int = 1, force_refresh: bool = False, hours_limit: int | None = None):
         """Lấy tin tức thực tế và tự động phân tích cảm xúc (Hỗ trợ Phân trang)."""
         cache_key = f"latest_news_{limit}_{page}_{hours_limit}"
         now_ts = time.time()
         
-        # ... (Cache handling remains similar, but using the new key)
         if not force_refresh and cache_key in self._cache:
             cache_data, timestamp = self._cache[cache_key]
             if now_ts - timestamp < self._cache_expiry:
@@ -91,31 +90,17 @@ class NewsService:
             total_count = len(news_items)
         else:
             logger.info(f"[NewsService] Truy xuất tin tức từ DB (Page: {page}, limit: {limit})...")
-            import asyncio
             try:
-                # Cách gọi async an toàn hơn trong FastAPI/Uvicorn
-                try:
-                    loop = asyncio.get_running_loop()
-                except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-
-                async def get_db_news():
-                    # Thử lấy tin theo filter (Repository giờ trả về tuple: items, total)
-                    items, total = await self.news_repo.get_latest_news(limit=limit, page=page, hours_limit=hours_limit)
-                    
-                    # FALLBACK: Nếu lọc theo giờ không có, lấy tin mới nhất bất kể thời gian
-                    if not items and hours_limit is not None:
-                        logger.info(f"[NewsService] Fallback: Không có tin trong {hours_limit}h qua, lấy tin cũ hơn từ DB...")
-                        items, total = await self.news_repo.get_latest_news(limit=limit, page=page, hours_limit=None)
-                    return items, total
-
-                if loop.is_running():
-                    import nest_asyncio
-                    nest_asyncio.apply()
-                    news_items, total_count = loop.run_until_complete(get_db_news())
-                else:
-                    news_items, total_count = asyncio.run(get_db_news())
+                # Gọi trực tiếp với await vì đây đã là hàm async
+                items, total = await self.news_repo.get_latest_news(limit=limit, page=page, hours_limit=hours_limit)
+                
+                # FALLBACK: Nếu lọc theo giờ không có, lấy tin mới nhất bất kể thời gian
+                if not items and hours_limit is not None:
+                    logger.info(f"[NewsService] Fallback: Không có tin trong {hours_limit}h qua, lấy tin cũ hơn từ DB...")
+                    items, total = await self.news_repo.get_latest_news(limit=limit, page=page, hours_limit=None)
+                
+                news_items = items
+                total_count = total
 
             except Exception as e:
                 logger.error(f"[NewsService] Lỗi truy xuất DB: {e}")
@@ -137,9 +122,7 @@ class NewsService:
         
         # Lưu kết quả
         try:
-            import asyncio
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.news_repo.save_news(analyzed_items))
+            await self.news_repo.save_news(analyzed_items)
         except Exception as e:
             logger.error(f"[NewsService] Lỗi tự động lưu phân tích: {e}")
 
@@ -154,15 +137,23 @@ class NewsService:
         self._cache[cache_key] = (result, now_ts)
         return result
 
-    def analyze(self, title: str, content: str = ""):
+    def analyze(self, title: str = "", content: str = "", text: str = ""):
         """Phân tích một đoạn văn bản đơn lẻ (Tiêu đề + Nội dung)."""
-        res = self.sentiment_analyzer.analyze_sentiment(title, content)
-        score = res["sentiment"]
+        # Hỗ trợ cả gọi bằng title hoặc text (từ route /news/analyze)
+        actual_title = title or text
+        # Sử dụng analyze_news_list (single item) để đồng nhất logic LLM + keyword
+        temp_item = [{"title": actual_title, "content": content, "source": "User", "trust_score": 0.8}]
+        avg_score, avg_impact, analyzed = self.sentiment_analyzer.analyze_news_list(temp_item)
+        
+        result = analyzed[0] if analyzed else {}
+        score = result.get("sentiment_score", 0.0)
         return {
-            "title": title,
+            "title": actual_title,
             "sentiment_score": score,
-            "reasoning": res["reasoning"],
-            "category": res["category"],
+            "reasoning": result.get("reasoning", ""),
+            "category": result.get("category", "Market"),
+            "impact_weight": result.get("impact_weight", avg_impact),
+            "summary": result.get("reasoning", ""),
             "label": "Tích cực" if score > 0.1 else "Tiêu cực" if score < -0.1 else "Trung tính"
         }
 
