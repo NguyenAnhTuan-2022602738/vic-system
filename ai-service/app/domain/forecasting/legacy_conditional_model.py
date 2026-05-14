@@ -13,7 +13,7 @@ import torch.nn as nn
 
 
 class ManualLSTMCell(nn.Module):
-    """Lớp LSTM Cell được viết bằng logic 'code tay' (Equations)."""
+    """Lớp LSTM Cell được viết bằng logic Equations."""
 
     def __init__(self, input_size: int, hidden_size: int):
         super().__init__()

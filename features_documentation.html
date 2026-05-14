@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bách khoa Toàn thư Đặc tả: Tham số, Công thức & Thuật ngữ AI - VIC System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0; line-height: 1.6; }
+        .feature-card { background: #1e293b; border: 1px solid #334155; transition: transform 0.2s, box-shadow 0.2s; }
+        .feature-card:hover { border-color: #6366f1; }
+        .gradient-text { background: linear-gradient(90deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .formula-box { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 12px 0; font-size: 0.95em; overflow-x: auto;}
+        .source-tag { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: flex-start; margin-top: 12px; border-top: 1px dashed #334155; padding-top: 8px; }
+        .source-tag i { margin-right: 6px; color: #64748b; margin-top: 4px; }
+        .param-list { margin-top: 10px; font-size: 0.85rem; color: #cbd5e1; }
+        .param-list li { margin-bottom: 6px; padding-left: 12px; position: relative; }
+        .param-list li::before { content: "•"; color: #3b82f6; font-weight: bold; position: absolute; left: 0; }
+        .section-title { border-bottom: 2px solid; padding-bottom: 8px; margin-bottom: 24px; margin-top: 48px; }
+        .danger-text { color: #f87171; font-weight: 600; }
+        .highlight-bg { background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace;}
+        .glossary-term { color: #38bdf8; font-weight: bold; font-size: 1.1em;}
+    </style>
+</head>
+<body class="p-8 md:p-16">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4"><span class="gradient-text">Hệ thống Dự báo VIC</span></h1>
+            <p class="text-lg text-slate-400">Bách khoa Toàn thư: Tham số, Công thức, Quản trị Rủi ro & Thuật ngữ AI</p>
+        </header>
+
+        <!-- ============================================== -->
+        <!-- PHẦN 1: ĐẶC TRƯNG ĐẦU VÀO -->
+        <!-- ============================================== -->
+        <h1 class="text-3xl font-bold section-title border-indigo-500 text-white">PHẦN 1: KHÔNG GIAN ĐẶC TRƯNG ĐẦU VÀO (INPUT FEATURES)</h1>
+
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 text-blue-300"><i class="fas fa-database mr-3"></i> 1.1 Dữ liệu Giao dịch Cơ sở</h2>
+            <div class="feature-card rounded-xl p-6 mb-6">
+                <h3 class="text-xl font-bold text-white mb-2">Khối lượng Chuẩn hóa (Normalized Volume)</h3>
+                <div class="formula-box border-l-blue-400">
+                    $$ V_{norm} = \frac{V_t}{MA(V, 20)} = \frac{V_t}{\frac{1}{20}\sum_{i=1}^{20} V_{t-i}} $$
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                        <strong class="text-blue-400">Mục đích:</strong> Khối lượng hiện tại chia cho trung bình khối lượng 20 phiên. Dùng để phát hiện sự đột biến dòng tiền (Dòng tiền Tổ chức) thay vì nhìn vào con số bị lạm phát theo thời gian.
+                    </div>
+                    <div>
+                        <strong class="danger-text"><i class="fas fa-exclamation-triangle"></i> Hậu quả nếu xóa:</strong> Mô hình bị "Mù dòng tiền". Giá tăng nhẹ nhưng không có thanh khoản (Bull Trap), mô hình dễ dính False Positive.
+                    </div>
+                </div>
+                <ul class="param-list mt-4 border-t border-slate-700 pt-4">
+                    <li><span class="font-bold text-white">Tham số:</span> <span class="highlight-bg">20</span> (Window size).</li>
+                    <li><span class="font-bold text-white">Nguồn gốc:</span> 20 phiên tương đương <strong>1 tháng giao dịch</strong>. (John Murphy, <em>Technical Analysis of the Financial Markets</em>).</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 text-emerald-300"><i class="fas fa-project-diagram mr-3"></i> 1.2 Chỉ báo Động lượng & Rủi ro</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- RSI -->
+                <div class="feature-card rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-2">RSI (Relative Strength Index)</h3>
+                    <div class="formula-box border-l-emerald-400">
+                        $$ RSI = 100 - \frac{100}{1 + RS} $$
+                    </div>
+                    <p class="text-sm mt-4 text-slate-300"><strong class="text-emerald-400">Mục đích:</strong> Xác định vùng "Quá mua" (>70) hoặc "Quá bán" (<30). Nhận biết bong bóng và hoảng loạn.</p>
+                    <p class="text-sm mt-2 text-red-400"><strong class="font-bold">Hậu quả nếu xóa:</strong> AI sẽ bị bệnh "Mua đuổi" ở đỉnh, "Bán tháo" ở đáy.</p>
+                    <ul class="param-list mt-2 border-t border-slate-700 pt-2">
+                        <li><span class="font-bold text-white">Hằng số:</span> <span class="highlight-bg">14</span>. Nguồn: Nửa chu kỳ mặt trăng (J. Welles Wilder Jr., 1978).</li>
+                    </ul>
+                </div>
+
+                <!-- MACD -->
+                <div class="feature-card rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-2">MACD (Convergence Divergence)</h3>
+                    <div class="formula-box border-l-emerald-400">
+                        $$ MACD = EMA_{12}(P) - EMA_{26}(P) $$
+                    </div>
+                    <p class="text-sm mt-4 text-slate-300"><strong class="text-emerald-400">Mục đích:</strong> Nhận biết gia tốc của xu hướng giá thông qua 2 đường trung bình.</p>
+                    <p class="text-sm mt-2 text-red-400"><strong class="font-bold">Hậu quả nếu xóa:</strong> AI mất khả năng "Bắt sóng", phản ứng chậm với biến đổi xu hướng.</p>
+                    <ul class="param-list mt-2 border-t border-slate-700 pt-2">
+                        <li><span class="font-bold text-white">Hằng số:</span> <span class="highlight-bg">12, 26</span>. Nguồn: Chu kỳ 2 tuần & 1 tháng giao dịch (Gerald Appel, 1979).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Volatility -->
+            <div class="feature-card rounded-xl p-6 mt-6">
+                <h3 class="text-xl font-bold text-white mb-2">Historical Volatility (Độ biến động)</h3>
+                <div class="formula-box border-l-emerald-400">
+                    $$ \sigma = \sqrt{ \frac{1}{N-1} \sum (r_i - \bar{r})^2 } \quad (N = 20) $$
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div><strong class="text-emerald-400">Mục đích:</strong> Kim chỉ nam để lượng hóa mức độ rủi ro của cổ phiếu.</div>
+                    <div><strong class="danger-text">Hậu quả nếu xóa:</strong> Không thể quản trị rủi ro (VaR). Giao dịch trở thành đánh bạc.</div>
+                </div>
+                <ul class="param-list mt-2 border-t border-slate-700 pt-2">
+                    <li><span class="font-bold text-white">Nguồn:</span> <em>Modern Portfolio Theory</em> (Harry Markowitz). 20 ngày theo RiskMetrics (J.P. Morgan).</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 text-purple-300"><i class="fas fa-brain mr-3"></i> 1.3 Tâm lý Tin tức (News Sentiment)</h2>
+            <div class="feature-card rounded-xl p-6">
+                <h3 class="text-xl font-bold text-white mb-2">Hàm suy giảm Thời gian (Time Decay)</h3>
+                <div class="formula-box border-l-purple-400">
+                    $$ Decay(t) = e^{-\lambda \cdot t} $$
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div><strong class="text-purple-400">Mục đích:</strong> Tin cũ giảm dần tác động lên giá cổ phiếu theo hàm mũ.</div>
+                    <div><strong class="danger-text">Hậu quả nếu xóa:</strong> Tin tức 1 tháng trước vẫn tác động 100% vào giá ngày hôm nay gây sai lệch.</div>
+                </div>
+                <ul class="param-list mt-2 border-t border-slate-700 pt-2">
+                    <li><span class="font-bold text-white">Hằng số:</span> <span class="highlight-bg">\(\lambda = 0.03\)</span>. Tạo ra thời gian bán hủy (Half-life) khoảng <strong>23.1 giờ</strong>. Tin tức sau 1 ngày giảm một nửa tác động. (Tetlock, 2007).</li>
+                </ul>
+            </div>
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- PHẦN 2: KẾT QUẢ ĐẦU RA & XÁC SUẤT -->
+        <!-- ============================================== -->
+        <h1 class="text-3xl font-bold section-title border-amber-500 text-white">PHẦN 2: KẾT QUẢ ĐẦU RA & XÁC SUẤT (OUTPUT TARGETS)</h1>
+        
+        <div class="feature-card rounded-xl p-6 mb-6">
+            <h3 class="text-xl font-bold text-amber-400 mb-2"><i class="fas fa-compress-arrows-alt mr-2"></i> 2.1 Phương pháp Late Fusion (Kỹ thuật x Tâm lý)</h3>
+            <div class="formula-box border-l-amber-400">
+                $$ \mu_{final} = \mu_{LSTM} \times (1 + \alpha \cdot S \cdot I) $$
+                $$ \sigma_{final} = \sigma_{LSTM} \times (1 + \beta \cdot |S| \cdot I) $$
+            </div>
+            <p class="text-sm mt-4 text-slate-300"><strong class="text-amber-400">Mục đích:</strong> Dùng AI phân tích kỹ thuật (chuỗi thời gian) riêng, rồi lấy Tin Tức khuếch đại (hoặc bóp nghẹt) Lợi nhuận và Rủi ro ở khâu cuối cùng.</p>
+            <p class="text-sm mt-2 text-red-400"><strong class="font-bold">Hậu quả nếu xóa:</strong> Mô hình mất khả năng xử lý Thiên nga đen (Black Swan) từ tin tức vĩ mô.</p>
+            <ul class="param-list mt-2 border-t border-slate-700 pt-2">
+                <li><span class="font-bold text-white">Tham số:</span> <span class="highlight-bg">\(\alpha = 0.3\)</span>, <span class="highlight-bg">\(\beta = 0.2\)</span>. Khống chế tin tức không bẻ cong giá trị cốt lõi quá 30% (Tránh Overreaction).</li>
+            </ul>
+        </div>
+            
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="feature-card rounded-xl p-6">
+                <h3 class="text-xl font-bold text-amber-400 mb-2"><i class="fas fa-percentage mr-2"></i> 2.2 Tỷ lệ Thắng (Win Rate)</h3>
+                <div class="formula-box border-l-amber-400">
+                    $$ P(X > 0) \approx \frac{1}{1 + e^{-\frac{\mu}{\sigma}}} $$
+                </div>
+                <ul class="param-list mt-2">
+                    <li><span class="font-bold text-amber-400">Định nghĩa:</span> Xác suất giao dịch có lãi dựa trên Giả định Gaussian.</li>
+                    <li><span class="font-bold text-amber-400">Nguồn gốc:</span> Hàm Sigmoid (S-curve) xấp xỉ CDF của phân phối chuẩn, giúp tăng 100 lần tốc độ xử lý so với tính tích phân.</li>
+                </ul>
+            </div>
+
+            <div class="feature-card rounded-xl p-6">
+                <h3 class="text-xl font-bold text-amber-400 mb-2"><i class="fas fa-shield-alt mr-2"></i> 2.3 Value at Risk (VaR 95%)</h3>
+                <div class="formula-box border-l-amber-400">
+                    $$ VaR_{95\%} = \mu - 1.645 \cdot \sigma $$
+                </div>
+                <ul class="param-list mt-2">
+                    <li><span class="font-bold text-amber-400">Định nghĩa:</span> Mức thua lỗ tồi tệ nhất với độ tự tin 95%.</li>
+                    <li><span class="font-bold text-amber-400">Nguồn gốc hằng số:</span> <span class="highlight-bg">1.645</span> là điểm Z-Score của 5% đuôi trái trong Phân phối Chuẩn. (Chuẩn toàn cầu của J.P. Morgan, 1994).</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- PHẦN 3: QUẢN TRỊ GIAO DỊCH -->
+        <!-- ============================================== -->
+        <h1 class="text-3xl font-bold section-title border-rose-500 text-white">PHẦN 3: ĐỘNG CƠ RA QUYẾT ĐỊNH (TRADING ENGINE)</h1>
+        
+        <div class="feature-card rounded-xl p-6 border-rose-500/50 mb-6">
+            <h2 class="text-2xl font-bold mb-4 text-rose-400"><i class="fas fa-gavel mr-3"></i> 3.1 Khuyến nghị Tín hiệu (Dynamic Volatility Engine)</h2>
+            <div class="formula-box border-l-rose-400">
+                $$ \text{BUY } \Leftarrow \mu > 0.5 \times \sigma \text{ AND } P_{gain} > 60\% $$
+                $$ \text{SELL } \Leftarrow \mu < -0.5 \times \sigma \text{ AND } P_{gain} < 40\% $$
+            </div>
+            <div class="mt-4 text-slate-300 text-sm">
+                <strong class="text-rose-400 block mb-2">Nguyên lý toán học:</strong>
+                Xây dựng dựa trên <strong>Sharpe Ratio</strong> ($S \approx \mu/\sigma$). Giao dịch chỉ được kích hoạt MUA nếu Lợi nhuận dự báo lớn hơn ít nhất 50% độ biến động rủi ro của thị trường, VÀ Xác suất sinh lời vượt qua mốc ngẫu nhiên (50%) để đạt mức đáng tin cậy (60%).
+            </div>
+        </div>
+
+        <div class="feature-card rounded-xl p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-4 text-rose-400"><i class="fas fa-hand-holding-usd mr-3"></i> 3.2 Tự động Đặt Cắt lỗ / Chốt lời (Stop Loss & Take Profit)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-emerald-900/20 p-4 rounded-lg">
+                    <h3 class="text-emerald-400 font-bold">Lệnh BUY</h3>
+                    <div class="formula-box text-xs border-l-emerald-500">
+                        $$ SL = P_{current} \times (1 - \max(1.5 \cdot \sigma, 3\%)) $$
+                        $$ TP = P_{current} \times (1 + \max(\mu, 5\%)) $$
+                    </div>
+                </div>
+                <div class="bg-rose-900/20 p-4 rounded-lg">
+                    <h3 class="text-rose-400 font-bold">Lệnh SELL</h3>
+                    <div class="formula-box text-xs border-l-rose-500">
+                        $$ SL = P_{current} \times (1 + \max(1.5 \cdot \sigma, 2\%)) $$
+                        $$ TP = P_{current} \times 0.95 $$
+                    </div>
+                </div>
+            </div>
+            <ul class="param-list mt-4">
+                <li><span class="font-bold text-rose-400">Ý nghĩa Hằng số 1.5:</span> Tương đương với việc cắt lỗ nếu giá rớt ra ngoài dải phân phối thông thường (gần giống nguyên lý Dải Bollinger sử dụng mức 2.0). Chấp nhận cho giá dao động 1.5 lần độ lệch chuẩn, rớt ra ngoài là cắt.</li>
+                <li><span class="font-bold text-rose-400">Ngưỡng tối thiểu 3% / 5%:</span> Tránh việc thị trường nhiễu nhẹ đã bị "quét Stop Loss", đảm bảo lợi nhuận bù đắp được chi phí vay margin.</li>
+            </ul>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- PHẦN 4: THƯỚC ĐO ĐÁNH GIÁ (METRICS) -->
+        <!-- ============================================== -->
+        <h1 class="text-3xl font-bold section-title border-cyan-500 text-white">PHẦN 4: THƯỚC ĐO HIỆU SUẤT MÔ HÌNH (EVALUATION METRICS)</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="feature-card rounded-xl p-6">
+                <h3 class="text-xl font-bold text-cyan-400 mb-2">4.1 MAE (Mean Absolute Error)</h3>
+                <div class="formula-box border-l-cyan-400">
+                    $$ MAE = \frac{1}{n}\sum_{i=1}^{n}|y_{true} - y_{pred}| $$
+                </div>
+                <p class="text-sm mt-4 text-slate-300">Sai số tuyệt đối trung bình. Phản ánh trực quan nhất độ lệch % (hoặc giá) giữa dự báo AI và thực tế. MAE càng nhỏ mô hình càng chính xác. Ít bị nhiễu bởi các điểm ngoại lai (Outliers).</p>
+            </div>
+            
+            <div class="feature-card rounded-xl p-6">
+                <h3 class="text-xl font-bold text-cyan-400 mb-2">4.2 MAPE (Mean Absolute Percentage Error)</h3>
+                <div class="formula-box border-l-cyan-400">
+                    $$ MAPE = \frac{1}{n}\sum \left| \frac{y_{true} - y_{pred}}{y_{true}} \right| \times 100 $$
+                </div>
+                <p class="text-sm mt-4 text-slate-300">Tính sai số theo tỷ lệ phần trăm (%). Rất hữu ích để so sánh lỗi giữa các tài sản có mệnh giá khác nhau. <em>Nhược điểm: Khi $y_{true}$ tiến về 0, MAPE sẽ tiến về Vô cực (Lỗi hệ thống).</em></p>
+            </div>
+        </div>
+
+        <div class="feature-card rounded-xl p-6 mb-12 border-cyan-500/50">
+            <h3 class="text-xl font-bold text-cyan-400 mb-2">4.3 Thang Điểm Chính Xác (Accuracy Score 0-100)</h3>
+            <div class="formula-box border-l-cyan-400">
+                $$ Score = \max(0, 100 - ( |Ret_{true} - Ret_{pred}| \times 500 )) $$
+            </div>
+            <ul class="param-list mt-4">
+                <li><span class="font-bold text-cyan-400">Tại sao không dùng Phép chia?:</span> Trong chứng khoán, Lợi nhuận $Ret_{true}$ có thể = 0% hoặc mang dấu ÂM. Phép chia $(Ret_{pred} / Ret_{true})$ sẽ gây ra lỗi "Chia cho 0" hoặc "Độ chính xác Âm", làm sập hệ thống.</li>
+                <li><span class="font-bold text-cyan-400">Hệ số Phạt 500:</span> Biên độ lợi nhuận T+2 rất nhỏ (khoảng 3%). Nếu chỉ lấy $100\% - |Sai số|$ thì một con AI lười biếng luôn đoán bằng $0\%$ cũng đạt điểm $97\%$. Do đó, ta phải nhân sai số với 500 (Tức lệch 1% bị trừ 5 điểm) để phóng to sai số, trừng phạt mạnh tay, phản ánh đúng năng lực AI.</li>
+            </ul>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- PHẦN 5: TỪ ĐIỂN THUẬT NGỮ -->
+        <!-- ============================================== -->
+        <h1 class="text-3xl font-bold section-title border-slate-400 text-white">PHẦN 5: TỪ ĐIỂN THUẬT NGỮ (GLOSSARY)</h1>
+        
+        <div class="feature-card rounded-xl p-6 mb-12">
+            <ul class="space-y-4 text-sm text-slate-300">
+                <li class="border-b border-slate-700 pb-3">
+                    <span class="glossary-term">Horizon (Khung thời gian dự báo):</span> 
+                    Số phiên giao dịch về tương lai mà mô hình dự đoán. Hệ thống đang dùng <strong>T+2</strong> (Dự đoán giá của 2 ngày sau) vì quy định của thị trường Việt Nam chứng khoán về tài khoản T+2.5 mới được bán.
+                </li>
+                <li class="border-b border-slate-700 pb-3">
+                    <span class="glossary-term">Sequence / Windowing (Chuỗi thời gian):</span> 
+                    LSTM không dự báo dựa trên 1 ngày, mà dựa trên 1 đoạn lịch sử liên tiếp. Hệ thống dùng chuỗi <strong>60 ngày</strong> (khoảng 1 quý giao dịch) để mô hình nhận diện được mẫu hình (pattern) trước khi đưa ra dự báo.
+                </li>
+                <li class="border-b border-slate-700 pb-3">
+                    <span class="glossary-term">MinMax Scaling (Chuẩn hóa Min-Max):</span> 
+                    Ép tất cả các dữ liệu có biên độ lệch nhau (VD: Giá 100.000đ và Volume 1.000.000) về một thang đo chung là $[0, 1]$. Giúp mạng nơ-ron không bị thiên vị bởi các giá trị quá lớn và hội tụ Gradient Descent nhanh hơn.
+                </li>
+                <li class="border-b border-slate-700 pb-3">
+                    <span class="glossary-term">Deep Scraping (Cào dữ liệu chuyên sâu):</span> 
+                    Kỹ thuật không chỉ dừng lại ở việc đọc Tiêu đề RSS (RSS Feeds) mà còn dùng BeautifulSoup thâm nhập thẳng vào HTML của bài báo (CafeF, Reuters) để bóc tách nội dung chi tiết (Full Content) và Giờ xuất bản chính xác, loại bỏ thẻ rác.
+                </li>
+                <li class="pb-1">
+                    <span class="glossary-term">Overfitting (Học vẹt):</span> 
+                    Tình trạng mô hình học quá mức dữ liệu trong quá khứ, độ chính xác trên tập Train thì 99% nhưng đem ra ngoài đời thực (Tập Test/Live) thì sai bét. LSTM được trang bị các lớp <em>Dropout</em> để vô hiệu hóa ngẫu nhiên nơ-ron nhằm chống lại căn bệnh này.
+                </li>
+            </ul>
+        </div>
+
+        <footer class="mt-8 text-center text-slate-500 text-xs border-t border-slate-800 pt-8 pb-12">
+            <p>Tài liệu đặc tả Đồ án Tốt nghiệp - Cập nhật 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

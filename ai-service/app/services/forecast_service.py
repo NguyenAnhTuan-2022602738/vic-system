@@ -98,7 +98,8 @@ class ForecastService:
 
             df = build_features(history)
             features = ['rsi', 'macd', 'ma20', 'volatility', 'open', 'high', 'low', 'close', 'volume_norm']
-            df['target_return'] = df['close'].pct_change().shift(-1)
+            # Tính lợi nhuận T+2 (2 phiên) thay vì T+1 để đồng bộ với Horizon mặc định của LSTM
+            df['target_return'] = df['close'].pct_change(periods=2).shift(-2)
             df = df.dropna(subset=features + ['target_return'])
 
             # Đảm bảo dữ liệu được chuẩn hóa cho LR
@@ -284,7 +285,7 @@ class ForecastService:
             "probability_gain": round(probability_gain(mu_adj, sigma_adj), 4),
             "probability_target": round(probability_target(mu_adj, sigma_adj, target_return), 4),
             "var_95": round(calculate_var(mu_adj, sigma_adj), 6),
-            "recommendation": make_recommendation(mu_adj, sigma_adj),
+            "recommendation": signal["action"],
             "sentiment_score": avg_sentiment,
             "impact_weight": round(avg_impact, 4),
             "news": news_list,

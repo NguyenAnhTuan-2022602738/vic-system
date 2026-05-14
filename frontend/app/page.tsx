@@ -20,16 +20,16 @@ import { TradeSignalsTable } from "@/components/trade-signals-table"
 import { AccuracyCard } from "@/components/accuracy-card"
 
 import { useI18n } from "@/lib/i18n"
-import { 
+import {
   getLatestPipeline,
   triggerForecastPipeline,
-  getDashboardStats, 
-  checkHealth, 
+  getDashboardStats,
+  checkHealth,
   getMarketHistory,
   getAdjustedForecast,
   getHistoryComparison,
   getHistoryNews,
-  ForecastResult, 
+  ForecastResult,
   DashboardStats,
   MarketHistoryItem,
   PipelineResult,
@@ -43,11 +43,11 @@ import { useDashboard } from "@/context/dashboard-context"
 
 export default function DashboardPage() {
   const { t } = useI18n()
-  const { 
-    forecast, pipeline, marketData, stats, isLive, isLoading, 
-    isSyncing, lastSyncTime, refreshData, setForecast, setIsLoading 
+  const {
+    forecast, pipeline, marketData, stats, isLive, isLoading,
+    isSyncing, lastSyncTime, refreshData, setForecast, setIsLoading
   } = useDashboard()
-  
+
   // Sandbox states (keep local for now as they are ephemeral)
   const [sandboxNews, setSandboxNews] = useState("")
   const [isSimulating, setIsSimulating] = useState(false)
@@ -58,7 +58,7 @@ export default function DashboardPage() {
   const [isFlashbackLoading, setIsFlashbackLoading] = useState(false)
   const [flashbackData, setFlashbackData] = useState<HistoryComparisonResult | null>(null)
   const [historicalNews, setHistoricalNews] = useState<NewsItem[]>([])
-  
+
   // Real-time states
   const [liveData, setLiveData] = useState<{
     price: number;
@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
   const loadHistoricalData = async (date: string) => {
     const todayStr = new Date().toISOString().split('T')[0]
-    
+
     if (date === todayStr) {
       toast.info("Chế độ Flashback: Dự báo hôm nay", {
         description: "Dữ liệu thực tế T+2 hiện chưa có để đối chiếu. Bạn có thể xem kết quả dự báo.",
@@ -112,11 +112,11 @@ export default function DashboardPage() {
     setIsFlashbackLoading(true)
     setFlashbackData(null) // Reset ngay để UI "nhảy" sang trạng thái Loading
     setHistoricalNews([])   // Reset tin tức lịch sử
-    
+
     try {
       const comparison = await getHistoryComparison(date)
       setFlashbackData(comparison)
-      
+
       const news = await getHistoryNews(date)
       setHistoricalNews(news)
     } catch (err) {
@@ -130,9 +130,9 @@ export default function DashboardPage() {
   const handleScenarioSimulation = async () => {
     if (!sandboxNews.trim()) return
     setIsSimulating(true)
-    
+
     const toastId = toast.loading("AI đang phân tích giả lập kịch bản...")
-    
+
     try {
       const res = await getAdjustedForecast(3, sandboxNews)
       if (res) {
@@ -175,22 +175,22 @@ export default function DashboardPage() {
   }
 
   const lastMarketItem = marketData.length > 0 ? marketData[marketData.length - 1] : null
-  
+
   // displayPrice: Ưu tiên Live Price > Flashback Entry Price > Last Market Price
-  const flashbackPrice = selectedDate && flashbackData?.forecast?.last_price_used 
-    ? flashbackData.forecast.last_price_used 
+  const flashbackPrice = selectedDate && flashbackData?.forecast?.last_price_used
+    ? flashbackData.forecast.last_price_used
     : null;
-    
-  const displayPrice = (selectedDate && !liveData) 
+
+  const displayPrice = (selectedDate && !liveData)
     ? (flashbackPrice || (lastMarketItem ? lastMarketItem.close : 47800))
     : (liveData?.price || (lastMarketItem ? lastMarketItem.close : 47800))
-    
+
   const currentPriceStr = displayPrice.toLocaleString()
-  
+
   // Logic for display metrics
   // Ưu tiên: Simulation (Sandbox) > Flashback (Lịch sử) > Forecast (Live)
   const activeForecast = simulationData || (selectedDate ? flashbackData?.forecast : forecast)
-  
+
   const getVal = (obj: any, realField: string, simField: string) => {
     if (!obj) return 0
     return obj[simField] !== undefined ? obj[simField] : (obj[realField] || 0)
@@ -201,18 +201,18 @@ export default function DashboardPage() {
   const varVal = getVal(activeForecast, 'var_95', 'var_95')
   const sigmaVal = getVal(activeForecast, 'uncertainty', 'adjusted_sigma')
 
-  const expectedReturnStr = activeForecast 
-    ? `${muVal >= 0 ? "+" : ""}${(muVal * 100).toFixed(1)}%` 
+  const expectedReturnStr = activeForecast
+    ? `${muVal >= 0 ? "+" : ""}${(muVal * 100).toFixed(1)}%`
     : "+3.5%"
-  
+
   const pGainStr = activeForecast ? `${Math.round(pGainVal * 100)}%` : "72%"
   const varStr = activeForecast ? `${(varVal * 100).toFixed(1)}%` : "-1.8%"
   const sharpeStr = activeForecast ? (muVal / Math.max(sigmaVal, 0.001)).toFixed(2) : "1.85"
-  
-  const winRateStr = stats 
-    ? `${stats.counts.forecasts > 0 ? Math.round(stats.recommendations.buy / Math.max(stats.counts.forecasts, 1) * 100) : 68}%` 
+
+  const winRateStr = stats
+    ? `${stats.counts.forecasts > 0 ? Math.round(stats.recommendations.buy / Math.max(stats.counts.forecasts, 1) * 100) : 68}%`
     : "68%"
-  
+
   const retTrend = muVal >= 0 ? "up" : "down"
   const prevClose = marketData.length > 1 ? marketData[marketData.length - 2].close : (lastMarketItem?.close || 47800)
   const priceTrendValue = (((displayPrice - prevClose) / prevClose) * 100).toFixed(2)
@@ -235,7 +235,7 @@ export default function DashboardPage() {
             <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
             <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Historical Flashback Mode Active</span>
           </div>
-          <button 
+          <button
             onClick={() => setSelectedDate("")}
             className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-md transition-colors cursor-pointer"
           >
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="px-6 pb-2 flex justify-between items-center -mt-2">
+      <div className="px-6 pb-2 flex justify-between items-center -mt-2" style={{ marginTop: "15px" }}>
         <p className="text-sm font-medium">
           {isSyncing ? (
             <span className="text-blue-500 animate-pulse">⏳ Đang phân tích dữ liệu mới nhất...</span>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
             <span className="text-amber-500">Chưa có dữ liệu dự báo. Hãy ấn nút Cập nhật.</span>
           )}
         </p>
-        <button 
+        <button
           onClick={handleTriggerUpdate}
           disabled={isSyncing}
           className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium shadow-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-all cursor-pointer"
@@ -268,13 +268,13 @@ export default function DashboardPage() {
             <><div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></div> Đang chạy Pipeline (1-2 phút)...</>
           ) : (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21v-5h5" /></svg>
               Cập Nhật Dữ Liệu T-1 & Dự Báo Mới
             </>
           )}
         </button>
       </div>
-      
+
       {/* SCENARIO SIMULATION (Hidden as requested) */}
       {/* 
       <div className="mx-6 mb-6 p-5 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl relative overflow-hidden group">
@@ -298,9 +298,9 @@ export default function DashboardPage() {
         {/* ROW 2: FORECAST & MODEL COMPARISON (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
           <div className="lg:col-span-3">
-            <ForecastCard 
-              data={selectedDate ? { ...forecast!, news: historicalNews } as any : forecast} 
-              isLive={isLive} 
+            <ForecastCard
+              data={selectedDate ? { ...forecast!, news: historicalNews } as any : forecast}
+              isLive={isLive}
               loading={isLoading || isFlashbackLoading}
               params={{ alpha, beta, targetReturn, horizon }}
               onParamChange={(newParams) => {

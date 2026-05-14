@@ -135,13 +135,13 @@
             <ul>
                 <li><strong>Hành động:</strong> Áp dụng mô hình đã huấn luyện lên tập Kiểm thử (Test Data). Đầu ra định lượng được chuyển đổi thành Tín hiệu (BUY/SELL/HOLD). Thay vì chỉ dùng sai số toán học, hệ thống thực thi mô phỏng giao dịch (Backtest) để đánh giá tính khả thi tài chính.</li>
                 <li><strong>Đầu vào:</strong> File mô hình đã huấn luyện và Ma trận dữ liệu Kiểm thử.</li>
-                <li><strong>Đầu ra (OUTPUT Cuối cùng):</strong> Cung cấp các thông số định lượng và chỉ số tài chính. Định nghĩa và công thức cụ thể như sau:
+                <li><strong>Đầu ra (OUTPUT Cuối cùng):</strong> Hệ thống trả về các thông số dự báo xác suất và rủi ro được điều chỉnh bằng cảm xúc tin tức, cụ thể hiển thị trên giao diện như sau:
                     <ul style="list-style-type: square; margin-top: 8px;">
-                        <li><strong>Tỷ suất lợi nhuận kỳ vọng (&mu;):</strong> Là mức lợi nhuận trung bình mà mô hình dự báo tài sản sẽ đạt được trong phiên tiếp theo.<br><em>Công thức:</em> &mu; = E[ R<sub>t</sub> | X<sub>t-1</sub> ]</li>
-                        <li><strong>Mức độ rủi ro (&sigma;):</strong> Độ lệch chuẩn dự báo, đại diện cho biên độ biến động (nhiễu) của thị trường. Nếu &sigma; quá lớn, hệ thống sẽ kích hoạt lệnh HOLD để phòng thủ.<br><em>Công thức:</em> &sigma; = &radic;<span style="border-top: 1px solid;">Var(R<sub>t</sub> | X<sub>t-1</sub>)</span></li>
-                        <li><strong>Tỷ lệ thắng (Win Rate):</strong> Đo lường xác suất một quyết định giao dịch sinh lời.<br><em>Công thức:</em> Win Rate = (Số lệnh thắng / Tổng số lệnh giao dịch) &times; 100%</li>
-                        <li><strong>Tỷ lệ Sharpe (Sharpe Ratio):</strong> Đánh giá hiệu suất đầu tư dựa trên mức rủi ro phải gánh chịu. Chỉ số > 1 là danh mục xuất sắc.<br><em>Công thức:</em> Sharpe = (R<sub>p</sub> - R<sub>f</sub>) / &sigma;<sub>p</sub> (Trong đó: R<sub>p</sub> là lợi nhuận danh mục, R<sub>f</sub> là lãi suất phi rủi ro, &sigma;<sub>p</sub> là độ lệch chuẩn lợi nhuận danh mục).</li>
-                        <li><strong>Sụt giảm tối đa (Max Drawdown - MDD):</strong> Đo lường mức sụt giảm tài khoản nặng nhất từ một đỉnh vốn đến đáy liền kề, dùng để kiểm định sức chịu đựng rủi ro của Bot.<br><em>Công thức:</em> MDD = (Peak - Trough) / Peak</li>
+                        <li><strong>Lợi nhuận kỳ vọng (&mu;<sub>adj</sub>):</strong> Là mức tăng trưởng dự báo đã được hiệu chỉnh bởi tin tức (Lấy cảm hứng từ mô hình Black-Litterman).<br><em>Công thức:</em> &mu;<sub>adj</sub> = &mu; &times; (1 + &alpha; &times; sentiment &times; impact)</li>
+                        <li><strong>Độ bất định (&sigma;<sub>adj</sub>):</strong> Biểu thị biên độ rủi ro hoặc nhiễu của thị trường sau khi tích hợp Sentiment Fusion.<br><em>Công thức:</em> &sigma;<sub>adj</sub> = &sigma; &times; (1 + &beta; &times; |sentiment| &times; impact)</li>
+                        <li><strong>Xác suất sinh lời:</strong> Tỷ lệ phần trăm dự báo giao dịch sẽ có lãi dựa trên phân phối chuẩn (Gaussian CDF) theo lý thuyết danh mục Markowitz (1952).<br><em>Công thức:</em> P(Return > 0) = 1 - &Phi;(-&mu; / &sigma;)</li>
+                        <li><strong>Value at Risk 95% (VaR):</strong> Mức sụt giảm rủi ro tối đa có thể xảy ra với độ tin cậy 95% (Theo phương pháp J.P. Morgan RiskMetrics 1996).<br><em>Công thức:</em> VaR = &mu; - 1.645 &times; &sigma;</li>
+                        <li><strong>Điểm cảm xúc (AI Sentiment):</strong> Chỉ số định lượng (-1 đến 1) thể hiện mức độ tích cực hay tiêu cực của tin tức thị trường.</li>
                     </ul>
                 </li>
             </ul>

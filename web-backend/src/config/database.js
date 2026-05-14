@@ -8,8 +8,8 @@ import { env } from './env.js';
 export const connectDatabase = async () => {
   try {
     console.log('📡 Đang kết nối tới MongoDB Atlas...');
-    await mongoose.connect(env.MONGO_URI, { 
-      serverSelectionTimeoutMS: 10000, // Tăng lên 10s cho chắc chắn
+    await mongoose.connect(env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000, // Chờ 10s
     });
     console.log('✅ Đã kết nối MongoDB thành công!');
   } catch (error) {

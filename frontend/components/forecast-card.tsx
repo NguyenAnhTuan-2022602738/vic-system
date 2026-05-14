@@ -74,11 +74,11 @@ export function ForecastCard({ data, isLive, loading, params, onParamChange }: F
   // AI Summary text
   const getSummary = () => {
     if (f.recommendation === "BUY") {
-      return `Tín hiệu TÍCH CỰC. Sharpe Ratio vượt ngưỡng cho thấy lợi nhuận kỳ vọng bù đắp tốt cho rủi ro. Sentiment thị trường đang hỗ trợ (${sentimentScore.toFixed(2)}). Đề xuất cân nhắc vào lệnh với mức cắt lỗ phù hợp.`
+      return `Tín hiệu TÍCH CỰC. Lợi nhuận kỳ vọng đã vượt qua ngưỡng biến động rủi ro (Dynamic Volatility) với Tỷ lệ thắng (Win Rate) cực cao. Đề xuất cân nhắc mở vị thế MUA với mức cắt lỗ tự động.`
     } else if (f.recommendation === "SELL") {
-      return `Tín hiệu TIÊU CỰC. Sharpe Ratio dưới ngưỡng an toàn, lợi nhuận kỳ vọng không bù đắp đủ rủi ro. Sentiment tiêu cực (${sentimentScore.toFixed(2)}). Khuyến nghị cắt giảm vị thế hoặc chờ đợi.`
+      return `Tín hiệu TIÊU CỰC. Lợi nhuận kỳ vọng không bù đắp được rủi ro biến động của thị trường. Xác suất giảm giá đang áp đảo. Khuyến nghị BÁN hoặc cắt giảm vị thế để bảo toàn vốn.`
     } else {
-      return `Thị trường TRUNG LẬP. Sharpe Ratio nằm trong vùng chờ đợi, biến động chưa đủ rõ ràng. Sentiment ở mức ${sentimentScore.toFixed(2)}. Nên quan sát thêm trước khi ra quyết định.`
+      return `Thị trường TRUNG LẬP. Lợi nhuận dự báo chưa đủ lớn để vượt qua rào cản nhiễu động (Volatility) hiện tại. Rủi ro / Lợi nhuận chưa hấp dẫn. Nên ĐỨNG NGOÀI quan sát thêm.`
     }
   }
 
@@ -141,7 +141,7 @@ export function ForecastCard({ data, isLive, loading, params, onParamChange }: F
                   </div>
                   <div>
                     <p className={cn("text-2xl font-black tracking-tight", rec.color)}>{f.recommendation}</p>
-                    <p className="text-[10px] text-muted-foreground">Khuyến nghị AI · Sharpe-based</p>
+                    <p className="text-[10px] text-muted-foreground">Khuyến nghị AI · Dynamic Volatility</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -157,7 +157,7 @@ export function ForecastCard({ data, isLive, loading, params, onParamChange }: F
                 </div>
               </motion.div>
 
-              {/* Stop Loss / Take Profit (chỉ hiển thị khi BUY hoặc SELL) */}
+              {/* YÊU CẦU ẨN: Stop Loss / Take Profit (chỉ hiển thị khi BUY hoặc SELL)
               {f.tradingSignal && f.recommendation !== "HOLD" && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -185,6 +185,7 @@ export function ForecastCard({ data, isLive, loading, params, onParamChange }: F
                   </div>
                 </motion.div>
               )}
+              */}
 
               {/* ===== SECTION 3: CÁC CHỈ SỐ (Mỗi cái 1 dòng, kèm công thức) ===== */}
               <div className="space-y-2">

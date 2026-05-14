@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries, IChartApi, CandlestickData, Time } from 'lightweight-charts';
+import { createChart, CandlestickSeries, LineSeries, IChartApi, CandlestickData, Time } from 'lightweight-charts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface CandlestickChartProps {
@@ -19,6 +19,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null);
+  const ma20SeriesRef = useRef<any>(null);
+  const rsiSeriesRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
     // Khởi tạo biểu đồ vào container (luôn hiện, dù loading)
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: 350,
+      height: 450, // Tăng height cho RSI pane
       layout: {
         background: { color: 'transparent' },
         textColor: '#9ca3af',
@@ -40,6 +42,10 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
+        scaleMargins: {
+          top: 0.05,
+          bottom: 0.25, // Dành 25% phía dưới cho RSI
+        },
       },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -55,8 +61,53 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
       wickDownColor: '#ef4444',
     });
 
+    // Cấu hình đường MA20
+    const ma20Series = chart.addSeries(LineSeries, {
+      color: 'rgba(245, 158, 11, 0.8)', // amber-500
+      lineWidth: 2,
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    });
+
+    const rsiSeries = chart.addSeries(LineSeries, {
+      color: 'rgba(168, 85, 247, 0.8)', // purple-500
+      lineWidth: 2,
+      priceScaleId: 'rsi',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    });
+
+    // Cấu hình pane RSI (nằm dưới cùng) SAU KHI đã gắn priceScaleId cho series
+    chart.priceScale('rsi').applyOptions({
+      scaleMargins: {
+        top: 0.8, // Bắt đầu từ 80% chiều cao biểu đồ
+        bottom: 0,
+      },
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    });
+
+    // Vẽ vạch 30 và 70 cho RSI
+    rsiSeries.createPriceLine({
+      price: 70,
+      color: 'rgba(239, 68, 68, 0.5)',
+      lineWidth: 1,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: 'Quá mua (70)',
+    });
+    rsiSeries.createPriceLine({
+      price: 30,
+      color: 'rgba(34, 197, 94, 0.5)',
+      lineWidth: 1,
+      lineStyle: 2,
+      axisLabelVisible: true,
+      title: 'Quá bán (30)',
+    });
+
     chartRef.current = chart;
     seriesRef.current = series;
+    ma20SeriesRef.current = ma20Series;
+    rsiSeriesRef.current = rsiSeries;
 
     // Lấy dữ liệu lịch sử
     const fetchHistory = async () => {
@@ -81,7 +132,23 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
             close: Number(item.close),
           }));
 
+        const ma20Data = items
+          .filter((item: any) => item.date && item.ma20 != null && item.ma20 > 0)
+          .map((item: any) => ({
+            time: item.date as Time,
+            value: Number(item.ma20),
+          }));
+
+        const rsiData = items
+          .filter((item: any) => item.date && item.rsi != null && item.rsi > 0)
+          .map((item: any) => ({
+            time: item.date as Time,
+            value: Number(item.rsi),
+          }));
+
         series.setData(formattedData);
+        ma20Series.setData(ma20Data);
+        rsiSeries.setData(rsiData);
         chart.timeScale().fitContent();
         setLoading(false);
       } catch (error) {
@@ -130,7 +197,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ className, l
         </div>
       </CardHeader>
       <CardContent className="relative">
-        <div ref={chartContainerRef} className="h-[350px] w-full" />
+        <div ref={chartContainerRef} className="h-[450px] w-full" />
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-card/80">
             <div className="text-muted-foreground text-sm">Đang tải biểu đồ...</div>

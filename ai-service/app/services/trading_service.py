@@ -49,20 +49,26 @@ class TradingService:
         else:
             sharpe = (expected_return - self.RISK_FREE_DAILY) / uncertainty
         
-        # ===== 2. XÁC ĐỊNH HÀNH ĐỘNG (Sharpe-based) =====
+        # ===== 2. XÁC ĐỊNH HÀNH ĐỘNG (Dynamic Volatility & Probability Thresholds) =====
         action = "HOLD"
         
-        if sharpe > 1.0:
-            # Sharpe > 1.0: "Good" — lợi nhuận vượt trội rõ ràng
+        # Ngưỡng động dựa trên dữ liệu lịch sử biến động (Volatility)
+        # - Thị trường giật mạnh (uncertainty cao) -> Đòi hỏi mu phải cao tương ứng mới báo MUA.
+        # - Thị trường êm đềm -> mu thấp cũng báo MUA.
+        dynamic_buy_threshold = 0.5 * uncertainty
+        dynamic_sell_threshold = -0.5 * uncertainty
+
+        if expected_return > dynamic_buy_threshold and probability_gain > 0.60:
+            # Lợi nhuận vượt 0.5 lần rủi ro VÀ Xác suất thắng > 60% (Vượt trội)
             action = "BUY"
-        elif sharpe > 0.5 and sentiment_score > 0:
-            # Sharpe chấp nhận được + sentiment xác nhận tích cực
+        elif expected_return > (0.3 * uncertainty) and probability_gain > 0.55 and sentiment_score > 0.2:
+            # Biên lợi nhuận mấp mé nhưng có Tin tức tốt (Sentiment) yểm trợ
             action = "BUY"
-        elif sharpe < 0:
-            # Sharpe âm: Lợi nhuận kỳ vọng thấp hơn lãi suất phi rủi ro
+        elif expected_return < dynamic_sell_threshold and probability_gain < 0.40:
+            # Lợi nhuận âm vượt 0.5 lần rủi ro VÀ Xác suất thắng < 40% (Tức là xác suất giảm > 60%)
             action = "SELL"
-        elif sharpe < 0.5 and sentiment_score < -0.3:
-            # Sharpe yếu + sentiment tiêu cực mạnh → tín hiệu cảnh báo
+        elif expected_return < (-0.3 * uncertainty) and probability_gain < 0.45 and sentiment_score < -0.2:
+            # Tin tức quá xấu kéo theo đà giảm
             action = "SELL"
         
         # ===== 3. CONFIDENCE (Chuẩn hóa Sharpe về [0, 1]) =====
